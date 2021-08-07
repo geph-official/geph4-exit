@@ -1,0 +1,64 @@
+[package]
+name = "geph4-exit"
+version = "0.1.0"
+authors = ["nullchinchilla <nullchinchilla@pm.me>", "Geph Project <contact@geph.io"]
+edition = "2018"
+description="Exit node for Geph"
+license="GPL-3.0-only"
+repository="https://github.com/geph-official/geph4-exit"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+# binder_transport = {path="../lib/binder_transport"}
+smol= "1.2.5"
+env_logger = "0.8.4"
+log= "0.4.14"
+structopt= "0.3.22"
+ed25519-dalek={ version = "1.0.1", features = ["serde"] }
+rand= "0.7.3"
+bincode= "1.3.3"
+anyhow= "1.0.42"
+hex= "0.4.3"
+x25519-dalek={ version = "1.1.1", features = ["serde"] }
+sosistab= "0.4.4"
+blake3= "0.3.8"
+serde= "1.0.127"
+# mizaru={path="../lib/mizaru"}
+once_cell= "1.8.0"
+smolscale = "0.3.11"
+smol-timeout = "0.6.0" 
+statsd = "0.14.1"
+num_cpus= "1.13.0"
+scopeguard= "1.1.0"
+parking_lot= "0.11.1"
+# tundevice={path="../lib/tundevice"}
+jemalloc-ctl= "0.3.3"
+cidr= "0.1.1"
+bytes= "1.0.1"
+lru= "0.6.6"
+pnet_packet= "0.27.2"
+rangemap= "0.1.11"
+dashmap= "4.0.2"
+governor= "0.3.2"
+# aioutils={path="../lib/aioutils"}
+# vpn_structs={path="../lib/vpn_structs"}
+
+libc= "0.2.98"
+os_socketaddr= "0.1.1"
+ureq= "1.5.5"
+flate2= "1.0.20"
+async-dup= "1.2.2"
+fastrand= "1.5.0"
+
+cached= "0.23.0"
+rustc-hash= "1.1.0"
+jemallocator= "0.3.2"
+
+futures-util= "0.3.16"
+geph4-binder-transport = "0.1.1"
+geph4-aioutils = "0.1.1"
+geph4-protocol = "0.1.0"
+mizaru = "0.1.1"
+tundevice = "0.1.1"
