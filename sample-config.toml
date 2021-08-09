@@ -1,0 +1,7 @@
+nat_external_iface = "eth0"
+
+[official]
+exit_hostname = "test.geph.io"
+
+[asn_proxies]
+15169 = "127.0.0.1:20100"

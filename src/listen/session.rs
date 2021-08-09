@@ -48,21 +48,30 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
     }
 
     let sess = Arc::new(sosistab::Multiplex::new(sess));
-    let is_plus = authenticate_sess(root.binder_client.clone(), &sess)
-        .timeout(Duration::from_secs(300))
-        .await
-        .ok_or_else(|| anyhow::anyhow!("authentication timeout"))??;
+    let is_plus = if let Some(binder_client) = root.binder_client.as_ref() {
+        authenticate_sess(binder_client.clone(), &sess)
+            .timeout(Duration::from_secs(300))
+            .await
+            .ok_or_else(|| anyhow::anyhow!("authentication timeout"))??
+    } else {
+        true
+    };
     log::info!(
         "authenticated a new session (is_plus = {}, raw_session_count = {})",
         is_plus,
         root.raw_session_count.load(Ordering::Relaxed)
     );
 
-    let rate_limit = if !is_plus {
-        if root.free_limit == 0 {
-            anyhow::bail!("not accepting free users here")
+    let rate_limit = if let Some(official) = root.config.official() {
+        if !is_plus {
+            let free_limit = official.free_limit().unwrap_or_default();
+            if free_limit == 0 {
+                anyhow::bail!("not accepting free users here")
+            } else {
+                RateLimiter::new(free_limit)
+            }
         } else {
-            RateLimiter::new(root.free_limit)
+            RateLimiter::unlimited()
         }
     } else {
         RateLimiter::unlimited()
@@ -142,13 +151,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
             }
         }
     };
-    let vpn_loop = handle_vpn_session(
-        sess.clone(),
-        rate_limit.clone(),
-        root.exit_hostname.clone(),
-        root.stat_client.clone(),
-        root.port_whitelist,
-    );
+    let vpn_loop = handle_vpn_session(root.clone(), sess.clone(), rate_limit.clone());
 
     let sess_replace_loop = async {
         loop {

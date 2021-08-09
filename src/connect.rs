@@ -24,38 +24,51 @@ pub async fn proxy_loop(
             .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
     });
 
+    // First, we establish a TCP connection
     let addr = smol::net::resolve(addr)
         .await?
         .into_iter()
         .find(|v| v.is_ipv4())
         .ok_or_else(|| anyhow::anyhow!("no IPv4 address"))?;
-    let asn = crate::asn::get_asn(addr.ip());
-    log::trace!(
-        "got connection request to AS{} (conn_count = {})",
-        asn,
-        ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed)
-    );
-    let key = format!("exit_usage.{}", ctx.exit_hostname.replace(".", "-"));
-    // log::debug!("helper got destination {} (AS{})", addr, asn);
 
+    // Reject if blacklisted
     if crate::lists::BLACK_PORTS.contains(&addr.port()) {
         anyhow::bail!("port blacklisted")
     }
-    if ctx.port_whitelist && !crate::lists::WHITE_PORTS.contains(&addr.port()) {
+    if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&addr.port()) {
         anyhow::bail!("port not whitelisted")
     }
 
-    let to_conn = if let Some(proxy) = ctx.google_proxy {
-        if addr.port() == 443 && asn == crate::asn::GOOGLE_ASN {
-            proxy
+    // Obtain ASN
+    let asn = crate::asn::get_asn(addr.ip());
+    log::debug!(
+        "got connection request to {} of AS{} (conn_count = {})",
+        ctx.config.redact(addr),
+        ctx.config.redact(asn),
+        ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed)
+    );
+
+    // Upload official stats
+    let upload_stat = {
+        let ctx = ctx.clone();
+        let key = if let Some(off) = ctx.config.official() {
+            format!("exit_usage.{}", off.exit_hostname().replace(".", "-"))
         } else {
-            addr
+            "".into()
+        };
+        move |n| {
+            if fastrand::f32() < 0.01 && count_stats {
+                ctx.stat_client
+                    .as_ref()
+                    .as_ref()
+                    .unwrap()
+                    .count(&key, n as f64 * 100.0);
+            }
         }
-    } else {
-        addr
     };
 
-    let remote = smol::net::TcpStream::connect(to_conn)
+    // TODO Google-proxy etc
+    let remote = smol::net::TcpStream::connect(addr)
         .timeout(Duration::from_secs(60))
         .await
         .ok_or_else(|| anyhow::anyhow!("connect timed out"))??;
@@ -64,18 +77,14 @@ pub async fn proxy_loop(
     let client2 = client.clone();
     smol::future::race(
         geph4_aioutils::copy_with_stats_async(remote2, client2, |n| {
-            if fastrand::f32() < 0.01 && count_stats {
-                ctx.stat_client.count(&key, n as f64 * 100.0);
-            }
+            upload_stat(n);
             let rate_limit = rate_limit.clone();
             async move {
                 rate_limit.wait(n).await;
             }
         }),
         geph4_aioutils::copy_with_stats(client, remote, |n| {
-            if fastrand::f32() < 0.01 && count_stats {
-                ctx.stat_client.count(&key, n as f64 * 100.0);
-            }
+            upload_stat(n);
         }),
     )
     .await?;

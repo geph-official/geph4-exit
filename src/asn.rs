@@ -48,6 +48,3 @@ pub fn get_asn(addr: IpAddr) -> u32 {
         _ => 0,
     }
 }
-
-/// Google's ASN
-pub const GOOGLE_ASN: u32 = 15169;

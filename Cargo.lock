@@ -310,9 +310,9 @@ dependencies = [
 
 [[package]]
 name = "async-process"
-version = "1.1.0"
+version = "1.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a8f38756dd9ac84671c428afbf7c9f7495feff9ec5b0710f17100098e5b354ac"
+checksum = "b21b63ab5a0db0369deb913540af2892750e42d949faacc7a61495ac418a1692"
 dependencies = [
  "async-io",
  "blocking",
@@ -445,6 +445,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1f45e9417d87227c7a56d22e471c6206462cba514c7590c09aff4cf6d1ddcad"
 dependencies = [
  "serde",
+]
+
+[[package]]
+name = "bipe"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "097dc3e97acb4c57d9efdafe21b6772d58598eb76efc7e850eaa7e97a479a56d"
+dependencies = [
+ "event-listener",
+ "futures-core",
+ "futures-lite",
+ "rtrb",
 ]
 
 [[package]]
@@ -1290,9 +1302,9 @@ dependencies = [
 
 [[package]]
 name = "geph4-aioutils"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82403ffd1eb797fc589c3aae71406c81aad1348bb7e516a99f241c2079c14718"
+checksum = "dc5401ddf21025f8c3ae49b6f6dcee799f47670c9f29991ceb0425062cc04207"
 dependencies = [
  "anyhow",
  "async-dup",
@@ -1308,9 +1320,9 @@ dependencies = [
 
 [[package]]
 name = "geph4-binder-transport"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8bb91facd63b291718b36497c66861cc19ecf74641d2afdee5fd8796d1167884"
+checksum = "35e9933dc9db563d137ca409dad6559f99b4bad681fcc3fb19b9f52bb06bc7f0"
 dependencies = [
  "async-h1",
  "async-tls",
@@ -1358,6 +1370,7 @@ dependencies = [
  "geph4-aioutils",
  "geph4-binder-transport",
  "geph4-protocol",
+ "getset",
  "governor",
  "hex",
  "jemalloc-ctl",
@@ -1382,6 +1395,7 @@ dependencies = [
  "sosistab",
  "statsd",
  "structopt",
+ "toml",
  "tundevice",
  "ureq",
  "x25519-dalek",
@@ -1420,6 +1434,18 @@ dependencies = [
  "libc",
  "wasi 0.10.2+wasi-snapshot-preview1",
  "wasm-bindgen",
+]
+
+[[package]]
+name = "getset"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24b328c01a4d71d2d8173daa93562a73ab0fe85616876f02500f53d82948c504"
+dependencies = [
+ "proc-macro-error",
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1773,9 +1799,9 @@ dependencies = [
 
 [[package]]
 name = "mizaru"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b1128d3a7378d93afb984901d01508fcaec56f1e92e34a989c6a1bfd54a6804e"
+checksum = "81fab438503fecbfce199df4115d221d548d93ad4d96c27a4137a735abacefc4"
 dependencies = [
  "bincode",
  "hex",
@@ -2797,9 +2823,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.4.5"
+version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88c2db2a5a4908a0fc3d38c3c41f523e544413754a1eadcfef7fff2c2bd856e6"
+checksum = "aed9ea3fa403f21c05f9856c66288da9e2d7da50623f5f3145472cf38696b463"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -2809,6 +2835,7 @@ dependencies = [
  "async-dup",
  "async-trait",
  "bincode",
+ "bipe",
  "blake3 0.3.8",
  "bloomfilter",
  "c2-chacha",
@@ -3128,6 +3155,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
+name = "toml"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
+dependencies = [
+ "serde",
+]
+
+[[package]]
 name = "tracing"
 version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3162,9 +3198,9 @@ dependencies = [
 
 [[package]]
 name = "tundevice"
-version = "0.1.1"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3f6ba0bc19267def2a313dd820706fb9fd1bbe2d7bab0ae98c2150f5cb5e649"
+checksum = "0dde9085e17787b31eb809308405371e39742c3c02a324f2b5a4d15cd75550f8"
 dependencies = [
  "async-dup",
  "blocking",

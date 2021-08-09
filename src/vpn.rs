@@ -23,7 +23,11 @@ use std::{
 };
 use tundevice::TunDevice;
 
-use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
+use crate::{
+    connect::proxy_loop,
+    listen::{RootCtx, SessCtx},
+    ratelimit::RateLimiter,
+};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
@@ -74,11 +78,9 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
 /// Handles a VPN session
 pub async fn handle_vpn_session(
+    ctx: Arc<RootCtx>,
     mux: Arc<sosistab::Multiplex>,
     rate_limit: Arc<RateLimiter>,
-    exit_hostname: String,
-    stat_client: Arc<statsd::Client>,
-    port_whitelist: bool,
 ) -> anyhow::Result<()> {
     Lazy::force(&INCOMING_PKT_HANDLER);
     log::trace!("handle_vpn_session entered");
@@ -90,20 +92,30 @@ pub async fn handle_vpn_session(
     scopeguard::defer!({
         INCOMING_MAP.write().remove(&addr);
     });
-    let key = format!("exit_usage.{}", exit_hostname.replace(".", "-"));
+    let stat_key = format!(
+        "exit_usage.{}",
+        ctx.config
+            .official()
+            .as_ref()
+            .map(|official| official.exit_hostname().to_string())
+            .unwrap_or_default()
+            .replace(".", "-")
+    );
 
     let (send_down, recv_down) =
         smol::channel::bounded(if rate_limit.is_unlimited() { 4096 } else { 64 });
     INCOMING_MAP.write().insert(addr, send_down);
     let _down_task: smol::Task<anyhow::Result<()>> = {
-        let key = key.clone();
+        let stat_key = stat_key.clone();
+        let ctx = ctx.clone();
         let mux = mux.clone();
-        let stat_client = stat_client.clone();
         smolscale::spawn(async move {
             loop {
                 let bts = recv_down.recv().await?;
-                if fastrand::f32() < 0.01 {
-                    stat_client.count(&key, bts.len() as f64 * 100.0)
+                if let Some(stat_client) = ctx.stat_client.as_ref() {
+                    if fastrand::f32() < 0.01 {
+                        stat_client.count(&stat_key, bts.len() as f64 * 100.0)
+                    }
                 }
                 rate_limit.wait(bts.len()).await;
                 let pkt = Ipv4Packet::new(&bts).expect("don't send me invalid IPv4 packets!");
@@ -132,8 +144,10 @@ pub async fn handle_vpn_session(
                 .await?;
             }
             VpnMessage::Payload(bts) => {
-                if fastrand::f32() < 0.01 {
-                    stat_client.count(&key, bts.len() as f64 * 100.0)
+                if let Some(stat_client) = ctx.stat_client.as_ref() {
+                    if fastrand::f32() < 0.01 {
+                        stat_client.count(&stat_key, bts.len() as f64 * 100.0)
+                    }
                 }
                 let pkt = Ipv4Packet::new(&bts);
                 if let Some(pkt) = pkt {
@@ -162,7 +176,8 @@ pub async fn handle_vpn_session(
                         if crate::lists::BLACK_PORTS.contains(&port) {
                             continue;
                         }
-                        if port_whitelist && !crate::lists::WHITE_PORTS.contains(&port) {
+                        if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&port)
+                        {
                             continue;
                         }
                     }
