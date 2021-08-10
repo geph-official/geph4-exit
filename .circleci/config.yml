@@ -5,14 +5,13 @@ jobs:
     docker:
       - image: cimg/rust:1.53.0
     steps:
+      - setup_remote_docker:
+        version: 19.03.13
       - checkout
       - run: cargo --version
       - run:
           name: Install cross
           command: "cargo install cross"
-      - run:
-          name: Start docker
-          command: "systemctl start docker"
       - run:
           name: Build for musl
           command: "cross build --locked --release --target x86_64-unknown-linux-musl"
