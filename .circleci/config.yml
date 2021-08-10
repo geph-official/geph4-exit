@@ -15,4 +15,4 @@ jobs:
           command: "cargo install cross"
       - run:
           name: Build for musl
-          command: "cross build --locked --release --target x86_64-unknown-linux-gnu"
+          command: "CROSS_DOCKER_IN_DOCKER=true cross build --locked --release --target x86_64-unknown-linux-gnu"
