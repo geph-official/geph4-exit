@@ -67,7 +67,13 @@ pub async fn proxy_loop(
         }
     };
 
-    // TODO Google-proxy etc
+    // Redirect if the config tells us to
+    let addr = if let Some(redirect_to) = ctx.config.asn_sniproxies().get(&asn.to_string()) {
+        log::debug!("redirecting {} of AS{} to {}!", addr, asn, redirect_to);
+        *redirect_to
+    } else {
+        addr
+    };
     let remote = smol::net::TcpStream::connect(addr)
         .timeout(Duration::from_secs(60))
         .await

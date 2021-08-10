@@ -24,9 +24,11 @@ pub struct Config {
     #[getset(get = "pub")]
     nat_external_iface: Option<String>,
 
-    /// A mapping between an ASN and proxy servers to redirect all port 80/443 TCP connections to. This must be the address of something that implements the HAProxy "PROXY protocol" version 1 (see https://github.com/haproxy/haproxy/blob/master/doc/proxy-protocol.txt). Generally used to specially redirect e.g. Google traffic.
+    /// A mapping between an ASN and proxy servers to redirect all port 443 TCP connections to. This must be the address of some kind of "sniproxy" instance. Generally used to specially redirect e.g. Google traffic.
+    ///
+    /// TODO: Will be replaced once Geph gets proper IPv6 support!
     #[getset(get = "pub")]
-    asn_proxies: Option<BTreeMap<String, SocketAddr>>,
+    asn_sniproxies: BTreeMap<String, SocketAddr>,
 
     /// Configuration options for "official" servers connected to a binder
     #[getset(get = "pub")]

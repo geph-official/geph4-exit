@@ -23,22 +23,14 @@ use std::{
 };
 use tundevice::TunDevice;
 
-use crate::{
-    connect::proxy_loop,
-    listen::{RootCtx, SessCtx},
-    ratelimit::RateLimiter,
-};
+use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     // always run on port 10000
+    // TODO this should bind dynamically
     let listen_addr: SocketAddr = "0.0.0.0:10000".parse().unwrap();
     let listener = smol::Async::<std::net::TcpListener>::bind(listen_addr).unwrap();
-
-    // we set the backlog to 65536. this avoids SYN cookies as long as possible.
-    unsafe {
-        libc::listen(listener.get_ref().as_raw_fd(), 65536);
-    }
 
     loop {
         let (client, _) = listener.accept().await.unwrap();

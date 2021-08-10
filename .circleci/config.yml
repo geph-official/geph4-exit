@@ -1,0 +1,15 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: cimg/rust:1.54.0
+    steps:
+      - checkout
+      - run: cargo --version
+      - run:
+          name: Run Tests
+          command: "cargo test"
+      - run:
+          name: Build for musl
+          command: "cargo build --locked --release --target x86_64-unknown-linux-musl"
