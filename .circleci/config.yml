@@ -11,8 +11,8 @@ jobs:
           name: Install musl toolchain
           command: "rustup target add x86_64-unknown-linux-musl"
       - run:
-          name: Musl include
-          command: "cd /usr/include/x86_64-linux-musl && sudo ln -s /usr/include/asm-generic && sudo ln -s /usr/include/asm && sudo ln -s /usr/include/linux"
+          name: Install cross
+          command: "cargo install cross"
       - run:
           name: Build for musl
-          command: "cargo build --locked --release --target x86_64-unknown-linux-musl"
+          command: "cross build --locked --release --target x86_64-unknown-linux-musl"
