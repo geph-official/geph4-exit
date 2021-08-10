@@ -12,7 +12,7 @@ jobs:
           command: "rustup target add x86_64-unknown-linux-musl"
       - run:
           name: Musl include
-          command: "cd /usr/musl/include && ln -s /usr/include/asm-generic && ln -s /usr/include/asm && ln -s /usr/include/linux"
+          command: "cd /usr/include/x86_64-linux-musl && ln -s /usr/include/asm-generic && ln -s /usr/include/asm && ln -s /usr/include/linux"
       - run:
           name: Build for musl
           command: "cargo build --locked --release --target x86_64-unknown-linux-musl"
