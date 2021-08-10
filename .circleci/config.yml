@@ -8,11 +8,11 @@ jobs:
       - checkout
       - run: cargo --version
       - run:
-          name: Install musl toolchain
-          command: "rustup target add x86_64-unknown-linux-musl"
-      - run:
           name: Install cross
           command: "cargo install cross"
+      - run:
+          name: Start docker
+          command: "systemctl start docker"
       - run:
           name: Build for musl
           command: "cross build --locked --release --target x86_64-unknown-linux-musl"
