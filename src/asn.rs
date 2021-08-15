@@ -15,11 +15,13 @@ static IPV4_MAP: Lazy<RangeMap<Ipv4Addr, u32>> = Lazy::new(|| {
         panic!("iptoasn.com failed")
     }
     let reader = resp.into_reader();
-    let mut reader = GzDecoder::new(BufReader::new(reader));
-    let mut outstring = String::default();
-    reader.read_to_string(&mut outstring).unwrap();
+    let reader = BufReader::new(GzDecoder::new(BufReader::new(reader)));
     let mut toret = RangeMap::new();
-    for line in outstring.split('\n') {
+    for (idx, line) in reader.lines().enumerate() {
+        let line = line.expect("I/O error while downloading ASN database");
+        if idx % 1000 == 0 {
+            log::debug!("loading line {} of ASN database...", idx);
+        }
         let elems: Vec<&str> = line.split_ascii_whitespace().collect();
         if elems.len() < 3 {
             log::warn!("skipping line in ASN database: {}", line)

@@ -58,17 +58,22 @@ pub async fn proxy_loop(
         };
         move |n| {
             if fastrand::f32() < 0.01 && count_stats {
-                ctx.stat_client
-                    .as_ref()
-                    .as_ref()
-                    .unwrap()
-                    .count(&key, n as f64 * 100.0);
+                if let Some(op) = ctx.stat_client.as_ref().as_ref() {
+                    op.count(&key, n as f64 * 100.0)
+                }
             }
         }
     };
 
     // Redirect if the config tells us to
-    let addr = if let Some(redirect_to) = ctx.config.asn_sniproxies().get(&asn.to_string()) {
+    let addr = if addr.port() != 443 {
+        addr
+    } else if let Some(redirect_to) = ctx
+        .config
+        .asn_sniproxies()
+        .as_ref()
+        .and_then(|f| f.get(&asn.to_string()))
+    {
         log::debug!("redirecting {} of AS{} to {}!", addr, asn, redirect_to);
         *redirect_to
     } else {

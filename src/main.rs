@@ -46,7 +46,7 @@ fn main() -> anyhow::Result<()> {
     };
     log::info!(
         "read configuration file:\n{}",
-        toml::to_string_pretty(&config)?
+        serde_json::to_string_pretty(&config)?
     );
     if let Some(nat_interface) = config.nat_external_iface().as_ref() {
         config_iptables(nat_interface)?;

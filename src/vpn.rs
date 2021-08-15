@@ -27,6 +27,9 @@ use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
+    if ctx.config.nat_external_iface().is_none() {
+        return Ok(());
+    }
     // always run on port 10000
     // TODO this should bind dynamically
     let listen_addr: SocketAddr = "0.0.0.0:10000".parse().unwrap();
@@ -74,6 +77,10 @@ pub async fn handle_vpn_session(
     mux: Arc<sosistab::Multiplex>,
     rate_limit: Arc<RateLimiter>,
 ) -> anyhow::Result<()> {
+    if ctx.config.nat_external_iface().is_none() {
+        log::warn!("disabling VPN mode since external interface is not specified!");
+        return smol::future::pending().await;
+    }
     Lazy::force(&INCOMING_PKT_HANDLER);
     log::trace!("handle_vpn_session entered");
     scopeguard::defer!(log::trace!("handle_vpn_session exited"));

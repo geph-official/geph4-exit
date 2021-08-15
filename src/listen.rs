@@ -205,7 +205,7 @@ pub struct SessCtx {
 
 /// the main listening loop
 #[allow(clippy::too_many_arguments)]
-pub async fn main_loop<'a>(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
+pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let exit_hostname = ctx
         .config
         .official()
@@ -217,13 +217,17 @@ pub async fn main_loop<'a>(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let _vpn = smolscale::spawn(vpn::transparent_proxy_helper(ctx.clone()));
 
     // control protocol listener
-    let control_prot_listen = smol::net::TcpListener::bind("[::0]:28080").await?;
     // future that governs the control protocol
     let control_prot_fut = async {
-        loop {
-            let ctx = ctx.clone();
-            let (client, _) = control_prot_listen.accept().await?;
-            smolscale::spawn(control::handle_control(ctx, client)).detach();
+        if ctx.config.official().is_some() {
+            let control_prot_listen = smol::net::TcpListener::bind("[::0]:28080").await?;
+            loop {
+                let ctx = ctx.clone();
+                let (client, _) = control_prot_listen.accept().await?;
+                smolscale::spawn(control::handle_control(ctx, client)).detach();
+            }
+        } else {
+            smol::future::pending().await
         }
     };
     let exit_hostname2 = exit_hostname.to_string();
@@ -238,14 +242,14 @@ pub async fn main_loop<'a>(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let ctx1 = ctx.clone();
     let self_bridge_fut = async {
         let flow_key = bridge_pkt_key("SELF");
-        let udp_listen = ctx
-            .listen_udp(None, "[::0]:19831".parse().unwrap(), &flow_key)
-            .await
-            .unwrap();
-        let tcp_listen = ctx
-            .listen_tcp(None, "[::0]:19831".parse().unwrap(), &flow_key)
-            .await
-            .unwrap();
+        let listen_addr: SocketAddr = ctx.config.sosistab_listen().parse().unwrap();
+        log::info!(
+            "listening on {}@{}",
+            hex::encode(x25519_dalek::PublicKey::from(&ctx.sosistab_sk).to_bytes()),
+            listen_addr
+        );
+        let udp_listen = ctx.listen_udp(None, listen_addr, &flow_key).await.unwrap();
+        let tcp_listen = ctx.listen_tcp(None, listen_addr, &flow_key).await.unwrap();
         log::debug!("sosis_listener initialized");
 
         loop {

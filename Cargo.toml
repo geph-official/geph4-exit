@@ -22,18 +22,18 @@ bincode= "1.3.3"
 anyhow= "1.0.42"
 hex= "0.4.3"
 x25519-dalek={ version = "1.1.1", features = ["serde"] }
-sosistab= "0.4.9"
+sosistab= "0.4.11"
 # sosistab={ path="../sosistab"}
 blake3= "1.0.0"
 serde= "1.0.127"
 # mizaru={path="../lib/mizaru"} 
 once_cell= "1.8.0"
-smolscale = "0.3.11"
-smol-timeout = "0.6.0" 
+smolscale = "0.3.12"
+smol-timeout = "0.6.0"
 statsd = "0.14.1"
 num_cpus= "1.13.0"
 scopeguard= "1.1.0"
-parking_lot= "0.11.1" 
+parking_lot= "0.11.1"
 # tundevice={path="../lib/tundevice"}
 jemalloc-ctl= "0.3.3"
 cidr= "0.1.1"
@@ -46,14 +46,14 @@ governor= "0.3.2"
 # aioutils={path="../lib/aioutils"}
 # vpn_structs={path="../lib/vpn_structs"}
 
-libc= "0.2.98"
+libc= "0.2.99"
 os_socketaddr= "0.2.0"
 ureq= "1.5.5"
 flate2= "1.0.20"
 async-dup= "1.2.2"
 fastrand= "1.5.0"
 
-cached= "0.24.0"
+cached= "0.24.1"
 rustc-hash= "1.1.0"
 jemallocator= "0.3.2"
 
@@ -68,6 +68,7 @@ tundevice = "0.1.3"
 getset = "0.1.1"
 
 toml= "0.5.8"
+serde_json = "1.0.66"
 
 [profile.release]
 panic = "abort"

@@ -28,11 +28,20 @@ pub struct Config {
     ///
     /// TODO: Will be replaced once Geph gets proper IPv6 support!
     #[getset(get = "pub")]
-    asn_sniproxies: BTreeMap<String, SocketAddr>,
+    asn_sniproxies: Option<BTreeMap<String, SocketAddr>>,
+
+    /// Where to listen to for incoming sosistab connections.
+    #[getset(get = "pub")]
+    #[serde(default = "sosistab_listen_default")]
+    sosistab_listen: String,
 
     /// Configuration options for "official" servers connected to a binder
     #[getset(get = "pub")]
     official: Option<OfficialConfig>,
+}
+
+fn sosistab_listen_default() -> String {
+    "[::0]:19831".into()
 }
 
 impl Config {
