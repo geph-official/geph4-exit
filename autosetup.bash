@@ -9,7 +9,7 @@ set -e
 
 
 echo "STEP 1: Installing Rust / 正在安裝 Rust"
-yes | curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 source $HOME/.cargo/env
 
 echo "STEP 2: Compiling geph4-exit / 正在編譯 geph4-exit"
