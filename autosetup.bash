@@ -32,12 +32,12 @@ Type=simple
 Restart=always
 ExecStart=$(which geph4-exit) --config $HOME/geph4-exit.toml
 LimitNOFILE=65536
-User=$(whoiam)
+User=$USER
 [Install]
 WantedBy=multi-user.target
 EOF
 
-sudo chmod 644 /etc/systemd/system/geph4-exit .service
+sudo chmod 644 /etc/systemd/system/geph4-exit.service
 sudo systemctl enable geph4-exit
 sudo systemctl daemon-reexec
 sudo systemctl restart geph4-exit
