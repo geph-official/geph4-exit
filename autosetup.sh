@@ -10,6 +10,7 @@ set -e
 
 echo "STEP 1: Installing Rust / 正在安裝 Rust"
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source $HOME/.cargo/env
 
 echo "STEP 2: Compiling geph4-exit / 正在編譯 geph4-exit"
 cargo install --locked geph4-exit
