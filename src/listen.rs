@@ -244,7 +244,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let flow_key = bridge_pkt_key("SELF");
         let listen_addr: SocketAddr = ctx.config.sosistab_listen().parse().unwrap();
         log::info!(
-            "listening on {}:{}@{}",
+            "listening on {}@{}:{}",
             hex::encode(x25519_dalek::PublicKey::from(&ctx.sosistab_sk).to_bytes()),
             if listen_addr.ip().is_unspecified() {
                 IpAddr::from(*MY_PUBLIC_IP)
