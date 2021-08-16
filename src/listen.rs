@@ -1,10 +1,10 @@
 use std::{
-    net::SocketAddr,
+    net::{IpAddr, SocketAddr},
     sync::{atomic::AtomicUsize, Arc},
     time::{Duration, Instant},
 };
 
-use crate::{config::Config, vpn};
+use crate::{asn::MY_PUBLIC_IP, config::Config, vpn};
 use geph4_binder_transport::{BinderClient, HttpClient};
 
 use dashmap::DashMap;
@@ -244,9 +244,14 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let flow_key = bridge_pkt_key("SELF");
         let listen_addr: SocketAddr = ctx.config.sosistab_listen().parse().unwrap();
         log::info!(
-            "listening on {}@{}",
+            "listening on {}:{}@{}",
             hex::encode(x25519_dalek::PublicKey::from(&ctx.sosistab_sk).to_bytes()),
-            listen_addr
+            if listen_addr.ip().is_unspecified() {
+                IpAddr::from(*MY_PUBLIC_IP)
+            } else {
+                listen_addr.ip()
+            },
+            listen_addr.port()
         );
         let udp_listen = ctx.listen_udp(None, listen_addr, &flow_key).await.unwrap();
         let tcp_listen = ctx.listen_tcp(None, listen_addr, &flow_key).await.unwrap();
