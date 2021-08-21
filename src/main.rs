@@ -29,6 +29,9 @@ struct Opt {
 pub static ALLOCATOR: Jemalloc = Jemalloc;
 
 fn main() -> anyhow::Result<()> {
+    if std::env::var("GEPH_SINGLETHREADED").is_some() {
+        smolscale::permanently_single_threaded();
+    }
     env_logger::Builder::from_env(Env::default().default_filter_or("geph4_exit=debug,warn")).init();
     let opt = Opt::from_args();
     let config: Config = {
