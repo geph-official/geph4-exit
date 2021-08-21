@@ -7,6 +7,9 @@ fi
 
 set -e
 
+echo "STEP 0: Installing prereqs"
+apt-get install build-essential
+
 
 echo "STEP 1: Installing Rust / 正在安裝 Rust"
  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
