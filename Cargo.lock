@@ -1463,7 +1463,7 @@ dependencies = [
 
 [[package]]
 name = "geph4-exit"
-version = "0.2.3-alpha.0"
+version = "0.2.3"
 dependencies = [
  "anyhow",
  "async-dup",
