@@ -676,9 +676,9 @@ checksum = "3a4f925191b4367301851c6d99b09890311d74b0d43f274c0b34c86d308a3663"
 
 [[package]]
 name = "cc"
-version = "1.0.69"
+version = "1.0.70"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e70cc2f62c6ce1868963827bd677764c62d07c3d9a3e1fb1177ee1a9ab199eb2"
+checksum = "d26a6ce4b6a484fa3edb70f7efa6fc430fd2b87285fe8b84304fd0936faa0dc0"
 
 [[package]]
 name = "cfg-if"
@@ -943,9 +943,9 @@ dependencies = [
 
 [[package]]
 name = "ctor"
-version = "0.1.20"
+version = "0.1.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5e98e2ad1a782e33928b96fc3948e7c355e5af34ba4de7670fe8bac2a3b2006d"
+checksum = "ccc0a48a9b826acdf4028595adc9db92caea352f7af011a3034acd172a52a0aa"
 dependencies = [
  "quote",
  "syn",
@@ -1089,9 +1089,9 @@ dependencies = [
 
 [[package]]
 name = "dnssector"
-version = "0.2.9"
+version = "0.2.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd38c9a72868aeeb168cf0588c74eb29d4b13c8dcf0f4fcd02a3799db966f877"
+checksum = "ef40cef9c349123274f45efc0021dcd1bd4b5b35226eafe4b84a9d8a2a6deeeb"
 dependencies = [
  "anyhow",
  "byteorder",
@@ -2791,9 +2791,9 @@ dependencies = [
 
 [[package]]
 name = "signal-hook"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "470c5a6397076fae0094aaf06a08e6ba6f37acb77d3b1b91ea92b4d6c8650c39"
+checksum = "9c98891d737e271a2954825ef19e46bd16bdb98e2746f2eec4f7a4ef7946efd1"
 dependencies = [
  "libc",
  "signal-hook-registry",
@@ -2944,9 +2944,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.4.20"
+version = "0.4.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c8151fee24319ca2067667f459a4bc8fad4724b27c7bd88f9fa1e76d66d03f15"
+checksum = "b5234c45ff0fa3a681627ba5d86d560ae2f46488be1650acbcea9528bfe451cc"
 dependencies = [
  "anyhow",
  "arc-swap",
