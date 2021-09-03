@@ -120,9 +120,9 @@ checksum = "b5ab7d9e73059c86c36473f459b52adbd99c3554a4fec492caef460806006f00"
 
 [[package]]
 name = "argh"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e7317a549bc17c5278d9e72bb6e62c6aa801ac2567048e39ebc1c194249323e"
+checksum = "f023c76cd7975f9969f8e29f0e461decbdc7f51048ce43427107a3d192f1c9bf"
 dependencies = [
  "argh_derive",
  "argh_shared",
@@ -130,9 +130,9 @@ dependencies = [
 
 [[package]]
 name = "argh_derive"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60949c42375351e9442e354434b0cba2ac402c1237edf673cac3a4bf983b8d3c"
+checksum = "48ad219abc0c06ca788aface2e3a1970587e3413ab70acd20e54b6ec524c1f8f"
 dependencies = [
  "argh_shared",
  "heck",
@@ -143,9 +143,9 @@ dependencies = [
 
 [[package]]
 name = "argh_shared"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8a61eb019cb8f415d162cb9f12130ee6bbe9168b7d953c17f4ad049e4051ca00"
+checksum = "38de00daab4eac7d753e97697066238d67ce9d7e2d823ab4f72fe14af29f3f33"
 
 [[package]]
 name = "arraymap"
@@ -572,12 +572,12 @@ dependencies = [
 
 [[package]]
 name = "bloomfilter"
-version = "1.0.5"
+version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cffe85a8b173164000edb6570ff7cf429acc9460b41d963e797df413f1765b4"
+checksum = "cf8588271abb26f506ed8138489f31a3a3d60883f1734f241234825eeec82931"
 dependencies = [
  "bit-vec",
- "rand 0.8.4",
+ "getrandom 0.2.3",
  "siphasher",
 ]
 
@@ -608,6 +608,9 @@ name = "bytes"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c4872d67bab6358e59559027aa3b9157c53d9358c51423c17554809a8858e0f8"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "c2-chacha"
@@ -1515,13 +1518,13 @@ dependencies = [
 
 [[package]]
 name = "geph4-protocol"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3a3e8c8b8de0b2626056af7b203d79aac645ea9e6c6579e2951b94fa4603504e"
+checksum = "a3f42c9dd845015541a4a465360c8e6e18165aa6eb84738867b9e84db2eb3b99"
 dependencies = [
+ "bytes",
  "serde",
  "smol",
- "sosistab",
 ]
 
 [[package]]
@@ -2065,9 +2068,9 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
 name = "ordered-float"
-version = "2.7.0"
+version = "2.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "039f02eb0f69271f26abe3202189275d7aa2258b903cb0281b5de710a2570ff3"
+checksum = "97c9d06878b3a851e8026ef94bf7fef9ba93062cd412601da4d9cf369b1cc62d"
 dependencies = [
  "num-traits",
 ]
@@ -2836,9 +2839,9 @@ dependencies = [
 
 [[package]]
 name = "siphasher"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "729a25c17d72b06c68cb47955d44fda88ad2d3e7d77e025663fdd69b93dd71a1"
+checksum = "533494a8f9b724d33625ab53c6c4800f7cc445895924a8ef649222dcb76e938b"
 
 [[package]]
 name = "sized-chunks"
@@ -2892,9 +2895,9 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.3.12"
+version = "0.3.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ef218c37996e15d888a9e96ca5064f864b8a69ee0074d7725eee0844efe0302"
+checksum = "ed13f585e320cfdce67c93e181b8fb086d22380569907dc784bc415a7e38680b"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -2905,7 +2908,7 @@ dependencies = [
  "backtrace 0.3.61",
  "cache-padded",
  "concurrent-queue",
- "crossbeam-queue",
+ "crossbeam-deque",
  "event-listener",
  "fastrand",
  "futures-intrusive",
@@ -2917,7 +2920,6 @@ dependencies = [
  "rtrb",
  "scopeguard",
  "slab",
- "spin 0.9.2",
  "thread_local",
 ]
 
@@ -2944,9 +2946,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.4.22"
+version = "0.4.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b5234c45ff0fa3a681627ba5d86d560ae2f46488be1650acbcea9528bfe451cc"
+checksum = "39ab375b8abe78ab7ec032d53bdcd46743861fdb9b22207acb5df24f11f95b62"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3139,9 +3141,9 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 
 [[package]]
 name = "syn"
-version = "1.0.75"
+version = "1.0.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b7f58f7e8eaa0009c5fec437aabf511bd9933e4b2d7407bd05273c01a8906ea7"
+checksum = "c6f107db402c2c2055242dbf4d2af0e69197202e9faacbef9571bbe47f5a1b84"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3329,9 +3331,9 @@ dependencies = [
 
 [[package]]
 name = "typenum"
-version = "1.13.0"
+version = "1.14.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "879f6906492a7cd215bfa4cf595b600146ccfac0c79bcbd1f3000162af5e8b06"
+checksum = "b63708a265f51345575b27fe43f9500ad611579e764c79edbc2037b1121959ec"
 
 [[package]]
 name = "unicode-bidi"

@@ -1,3 +1,4 @@
+use bytes::Bytes;
 use cidr::{Cidr, Ipv4Cidr};
 
 use futures_util::TryFutureExt;
@@ -119,7 +120,7 @@ pub async fn handle_vpn_session(
                 rate_limit.wait(bts.len()).await;
                 let pkt = Ipv4Packet::new(&bts).expect("don't send me invalid IPv4 packets!");
                 assert_eq!(pkt.get_destination(), addr);
-                let msg = VpnMessage::Payload(bts);
+                let msg = VpnMessage::Payload(Bytes::copy_from_slice(&bts));
                 let mut to_send = BuffMut::new();
                 bincode::serialize_into(to_send.deref_mut(), &msg).unwrap();
                 let _ = mux.send_urel(to_send).await;
