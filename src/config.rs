@@ -20,6 +20,11 @@ pub struct Config {
     #[serde(default)]
     anonymize_logs: bool,
 
+    /// Whether or not to spam gzipped sosistab traces to a given file.
+    #[getset(get = "pub")]
+    #[serde(default)]
+    sosistab_trace: Option<PathBuf>,
+
     /// External interface on which VPN packets should be forwarded. Must be set in order to use VPN mode!
     #[getset(get = "pub")]
     nat_external_iface: Option<String>,
