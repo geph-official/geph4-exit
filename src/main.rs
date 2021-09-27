@@ -93,7 +93,7 @@ iptables -t nat -F
 
 iptables -t nat -A PREROUTING -i tun-geph -p tcp --syn -j REDIRECT --match multiport --dports 80,443,8080 --to-ports 10000
 
-iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE --random
+iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE --random-fully
 iptables -A FORWARD -i $INTERFACE -o tun-geph -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i tun-geph -o $INTERFACE -j ACCEPT
 iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240

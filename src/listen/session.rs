@@ -4,14 +4,16 @@ use std::{
     time::{Duration, SystemTime},
 };
 
-use super::SessCtx;
+use super::{RootCtx, SessCtx};
 use crate::{connect::proxy_loop, ratelimit::RateLimiter, vpn::handle_vpn_session};
 use anyhow::Context;
 use geph4_binder_transport::{BinderClient, BinderRequestData, BinderResponse};
 
 use futures_util::TryFutureExt;
+use geph4_protocol::Telemetry;
 use smol::prelude::*;
 use smol_timeout::TimeoutExt;
+use sosistab::RelConn;
 
 use std::sync::Arc;
 
@@ -134,14 +136,24 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                 let rate_limit = rate_limit.clone();
                 smolscale::spawn(
                     async move {
-                        let _ = send_sess_alive.try_send(());
                         let addr = client.additional_info().unwrap_or_default().to_owned();
                         match addr.as_str() {
+                            "" => {
+                                if let Some(stat) = root.stat_client.as_ref() {
+                                    stat.count(&format!("watchdogs.{}", root.exit_hostname()), 1.0);
+                                }
+                            }
                             "!id" => {
                                 // return the ID of this mux
                                 client.write_all(&sess_replace_key).await?;
                             }
-                            _ => proxy_loop(root, rate_limit, client, addr, true).await?,
+                            "!telemetry" => {
+                                handle_telemetry(root, client).await?;
+                            }
+                            _ => {
+                                let _ = send_sess_alive.try_send(());
+                                proxy_loop(root, rate_limit, client, addr, true).await?
+                            }
                         }
                         Ok(())
                     }
@@ -163,6 +175,29 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
     ((proxy_loop.or(sess_alive_loop)).race(vpn_loop))
         .or(sess_replace_loop)
         .await
+}
+
+/// Handles telemetry.
+async fn handle_telemetry(root: Arc<RootCtx>, client: RelConn) -> anyhow::Result<()> {
+    let mut client = smol::io::BufReader::new(client);
+    let mut buf = String::new();
+    client.read_line(&mut buf).await?;
+    let telemetry: Telemetry = serde_json::from_str(&buf)?;
+    if let Some(stat) = root.stat_client.clone() {
+        stat.count(
+            &format!(
+                "telemetry.version.{}.{}",
+                telemetry.version,
+                root.exit_hostname()
+            ),
+            1.0,
+        );
+        stat.histogram(
+            &format!("telemetry.ping_ms.{}", root.exit_hostname()),
+            telemetry.watchdog_ping_ms as f64,
+        );
+    }
+    Ok(())
 }
 
 /// Authenticates a session.

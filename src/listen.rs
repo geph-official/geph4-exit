@@ -98,6 +98,15 @@ impl From<Config> for RootCtx {
 }
 
 impl RootCtx {
+    pub fn exit_hostname(&self) -> String {
+        self.config
+            .official()
+            .as_ref()
+            .map(|official| official.exit_hostname().to_owned())
+            .unwrap_or_default()
+            .replace(".", "-")
+    }
+
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {
         SessCtx {
             root: self.clone(),

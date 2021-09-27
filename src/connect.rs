@@ -1,9 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use smol::{
-    io::{AsyncRead, AsyncWrite},
-    net::AsyncToSocketAddrs,
-};
+use smol::io::{AsyncRead, AsyncWrite};
 use smol_timeout::TimeoutExt;
 
 use crate::{listen::RootCtx, ratelimit::RateLimiter};
@@ -13,7 +10,7 @@ pub async fn proxy_loop(
     ctx: Arc<RootCtx>,
     rate_limit: Arc<RateLimiter>,
     client: impl AsyncRead + AsyncWrite + Clone + Unpin,
-    addr: impl AsyncToSocketAddrs,
+    addr: String,
     count_stats: bool,
 ) -> anyhow::Result<()> {
     // Incr/decr the connection count
