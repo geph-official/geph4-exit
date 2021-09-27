@@ -192,7 +192,7 @@ async fn handle_telemetry(root: Arc<RootCtx>, client: RelConn) -> anyhow::Result
             ),
             1.0,
         );
-        stat.histogram(
+        stat.timer(
             &format!("telemetry.ping_ms.{}", root.exit_hostname()),
             telemetry.watchdog_ping_ms as f64,
         );
