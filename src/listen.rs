@@ -255,7 +255,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         log::info!(
             "listening on {}@{}:{}",
             hex::encode(x25519_dalek::PublicKey::from(&ctx.sosistab_sk).to_bytes()),
-            if listen_addr.ip().is_unspecified() {
+            if listen_addr.ip().is_unspecified() && !ctx1.config.disable_reflective_ip_detection(){
                 IpAddr::from(*MY_PUBLIC_IP)
             } else {
                 listen_addr.ip()

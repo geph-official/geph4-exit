@@ -43,6 +43,11 @@ pub struct Config {
     /// Configuration options for "official" servers connected to a binder
     #[getset(get = "pub")]
     official: Option<OfficialConfig>,
+
+    /// Whether or not to get ip address from external service
+    #[getset(get_copy = "pub")]
+    #[serde(default)]
+    disable_reflective_ip_detection: bool,
 }
 
 fn sosistab_listen_default() -> String {
