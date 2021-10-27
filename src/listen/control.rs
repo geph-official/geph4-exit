@@ -72,7 +72,10 @@ pub async fn handle_control(
             // create or recall binding
             if info.is_none() {
                 let ctx = ctx.clone();
-                log::debug!("redoing binding because info is none");
+                log::debug!(
+                    "redoing binding for {} because info is none",
+                    client.peer_addr()?
+                );
                 let sosis_secret = x25519_dalek::StaticSecret::new(&mut rand::thread_rng());
                 // we make TCP first since TCP ephemeral ports are a lot more scarce.
                 let to_repeat = || async {

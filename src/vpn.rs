@@ -77,6 +77,7 @@ pub async fn handle_vpn_session(
     ctx: Arc<RootCtx>,
     mux: Arc<sosistab::Multiplex>,
     rate_limit: Arc<RateLimiter>,
+    on_activity: impl Fn(),
 ) -> anyhow::Result<()> {
     if ctx.config.nat_external_iface().is_none() {
         log::warn!("disabling VPN mode since external interface is not specified!");
@@ -130,6 +131,7 @@ pub async fn handle_vpn_session(
 
     loop {
         let bts = mux.recv_urel().await?;
+        on_activity();
         let msg: VpnMessage = bincode::deserialize(&bts)?;
         match msg {
             VpnMessage::ClientHello { .. } => {

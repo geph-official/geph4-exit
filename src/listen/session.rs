@@ -124,6 +124,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
         let root = root.clone();
         let sess = sess.clone();
         let rate_limit = rate_limit.clone();
+        let send_sess_alive = send_sess_alive.clone();
         async move {
             loop {
                 let mut client = sess
@@ -163,7 +164,9 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
             }
         }
     };
-    let vpn_loop = handle_vpn_session(root.clone(), sess.clone(), rate_limit.clone());
+    let vpn_loop = handle_vpn_session(root.clone(), sess.clone(), rate_limit.clone(), || {
+        let _ = send_sess_alive.try_send(());
+    });
 
     let sess_replace_loop = async {
         loop {
