@@ -1,9 +1,9 @@
 use std::{sync::Arc, time::Duration};
 
-use smol::io::{AsyncRead, AsyncWrite};
-use smol_timeout::TimeoutExt;
-
 use crate::{listen::RootCtx, ratelimit::RateLimiter};
+use smol::io::{AsyncRead, AsyncWrite};
+use smol::prelude::*;
+use smol_timeout::TimeoutExt;
 
 /// Connects to a remote host and forwards traffic to/from it and a given client.
 pub async fn proxy_loop(
@@ -95,6 +95,14 @@ pub async fn proxy_loop(
             upload_stat(n);
         }),
     )
+    .or(async {
+        // 30 second "grace period"
+        smol::Timer::after(Duration::from_secs(30)).await;
+        let killer = ctx.kill_event.listen();
+        killer.await;
+        log::warn!("killing connection due to connection kill event");
+        Ok(())
+    })
     .await?;
     Ok(())
 }

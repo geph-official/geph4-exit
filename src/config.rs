@@ -43,10 +43,19 @@ pub struct Config {
     /// Configuration options for "official" servers connected to a binder
     #[getset(get = "pub")]
     official: Option<OfficialConfig>,
+
+    /// Limit on the number of outgoing TCP connections. By default, 3000.
+    #[getset(get_copy = "pub")]
+    #[serde(default = "conn_count_limit_default")]
+    conn_count_limit: usize,
 }
 
 fn sosistab_listen_default() -> String {
     "[::0]:19831".into()
+}
+
+fn conn_count_limit_default() -> usize {
+    3000
 }
 
 impl Config {

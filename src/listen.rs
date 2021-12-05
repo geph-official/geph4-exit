@@ -1,10 +1,14 @@
 use std::{
     net::{IpAddr, SocketAddr},
-    sync::{atomic::AtomicUsize, Arc},
+    sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    },
     time::{Duration, Instant},
 };
 
 use crate::{asn::MY_PUBLIC_IP, config::Config, vpn};
+use event_listener::Event;
 use geph4_binder_transport::{BinderClient, HttpClient};
 
 use dashmap::DashMap;
@@ -36,6 +40,7 @@ pub struct RootCtx {
 
     // pub google_proxy: Option<SocketAddr>,
     pub sess_replacers: DashMap<[u8; 32], Sender<Session>>,
+    pub kill_event: Event,
 }
 
 impl From<Config> for RootCtx {
@@ -65,6 +70,7 @@ impl From<Config> for RootCtx {
                 }
             }
         };
+        log::info!("signing_sk = {}", hex::encode(signing_sk.public));
         let sosistab_sk = x25519_dalek::StaticSecret::from(*signing_sk.secret.as_bytes());
         Self {
             config: cfg.clone(),
@@ -93,6 +99,7 @@ impl From<Config> for RootCtx {
             control_count: Default::default(),
 
             sess_replacers: Default::default(),
+            kill_event: Event::new(),
         }
     }
 }
@@ -206,6 +213,16 @@ async fn idlejitter(ctx: Arc<RootCtx>) {
     }
 }
 
+async fn killconn(ctx: Arc<RootCtx>) {
+    loop {
+        if ctx.conn_count.load(Ordering::Relaxed) > ctx.config.conn_count_limit() {
+            ctx.kill_event
+                .notify_relaxed(ctx.config.conn_count_limit() / 8)
+        }
+        smol::Timer::after(Duration::from_secs(5)).await;
+    }
+}
+
 /// per-session context
 pub struct SessCtx {
     root: Arc<RootCtx>,
@@ -222,7 +239,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         .map(|official| official.exit_hostname().to_owned())
         .unwrap_or_default();
     let _idlejitter = smolscale::spawn(idlejitter(ctx.clone()));
-
+    let _killconn = smolscale::spawn(killconn(ctx.clone()));
     let _vpn = smolscale::spawn(vpn::transparent_proxy_helper(ctx.clone()));
 
     // control protocol listener
