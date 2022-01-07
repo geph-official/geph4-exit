@@ -23,7 +23,7 @@ anyhow= "1.0.44"
 hex= "0.4.3"
 x25519-dalek={ version = "1.2.0", features = ["serde"] }
 sosistab= "0.4.39"
-# sosistab={ path="../sosistab"}
+#sosistab={ path="../sosistab"}
 blake3= "1.1.0"
 serde= "1.0.130"
 # mizaru={path="../lib/mizaru"} 
