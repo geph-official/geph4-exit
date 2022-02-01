@@ -1,9 +1,28 @@
-use std::{sync::Arc, time::Duration};
+use std::{net::SocketAddr, sync::Arc, time::Duration};
 
 use crate::{listen::RootCtx, ratelimit::RateLimiter};
 use smol::io::{AsyncRead, AsyncWrite};
 use smol::prelude::*;
 use smol_timeout::TimeoutExt;
+use tap::TapFallible;
+
+#[cached::proc_macro::cached(time = 600, result = true)]
+async fn resolve_name_inner(name: String) -> anyhow::Result<SocketAddr> {
+    Ok(smol::net::resolve(&name)
+        .await?
+        .into_iter()
+        .find(|v| v.is_ipv4())
+        .ok_or_else(|| anyhow::anyhow!("no IPv4 address"))?)
+}
+
+async fn resolve_name(name: String) -> anyhow::Result<SocketAddr> {
+    for _ in 0..3 {
+        if let Ok(a) = resolve_name_inner(name.clone()).await {
+            return Ok(a);
+        }
+    }
+    resolve_name_inner(name.clone()).await
+}
 
 /// Connects to a remote host and forwards traffic to/from it and a given client.
 pub async fn proxy_loop(
@@ -22,11 +41,9 @@ pub async fn proxy_loop(
     });
 
     // First, we establish a TCP connection
-    let addr = smol::net::resolve(addr)
-        .await?
-        .into_iter()
-        .find(|v| v.is_ipv4())
-        .ok_or_else(|| anyhow::anyhow!("no IPv4 address"))?;
+    let addr = resolve_name(addr.clone())
+        .await
+        .tap_err(|err| log::warn!("cannot resolve remote {}: {}", addr, err))?;
 
     // Reject if blacklisted
     if crate::lists::BLACK_PORTS.contains(&addr.port()) {
@@ -38,7 +55,7 @@ pub async fn proxy_loop(
 
     // Obtain ASN
     let asn = crate::asn::get_asn(addr.ip());
-    log::debug!(
+    log::trace!(
         "got connection request to {} of AS{} (conn_count = {})",
         ctx.config.redact(addr),
         ctx.config.redact(asn),
@@ -71,7 +88,7 @@ pub async fn proxy_loop(
         .as_ref()
         .and_then(|f| f.get(&asn.to_string()))
     {
-        log::debug!("redirecting {} of AS{} to {}!", addr, asn, redirect_to);
+        log::trace!("redirecting {} of AS{} to {}!", addr, asn, redirect_to);
         *redirect_to
     } else {
         addr
