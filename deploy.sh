@@ -10,6 +10,6 @@ for host in us-pdx-01.exits.geph.io sosistab-jp-test.labooyah.be sg-sgp-03.exits
 do                             
 echo "restarting $host..."
 ssh root@$host service geph4-exit restart
-sleep 10
+#sleep 60
 done; wait;
 

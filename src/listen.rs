@@ -299,6 +299,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let rskey = format!("raw_session_count.{}", exit_hostname.replace(".", "-"));
         let memkey = format!("bytes_allocated.{}", exit_hostname.replace(".", "-"));
         let connkey = format!("conn_count.{}", exit_hostname.replace(".", "-"));
+        let threadkey = format!("thread_key.{}", exit_hostname.replace(".", "-"));
         let ctrlkey = format!("control_count.{}", exit_hostname.replace(".", "-"));
         let taskkey = format!("task_count.{}", exit_hostname.replace(".", "-"));
         let hijackkey = format!("hijackers.{}", exit_hostname.replace(".", "-"));
@@ -321,7 +322,9 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 let control_count = ctx.control_count.load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&ctrlkey, control_count as f64);
                 let task_count = smolscale::active_task_count();
+                let thread_count = smolscale::running_threads();
                 stat_client.gauge(&taskkey, task_count as f64);
+                stat_client.gauge(&threadkey, thread_count as f64);
                 stat_client.gauge(&hijackkey, ctx.sess_replacers.len() as f64);
             }
             smol::Timer::after(Duration::from_secs(10)).await;
