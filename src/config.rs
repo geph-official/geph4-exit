@@ -1,3 +1,4 @@
+use cidr_utils::cidr::Ipv6Cidr;
 use getset::{CopyGetters, Getters};
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, net::SocketAddr, path::PathBuf};
@@ -28,6 +29,14 @@ pub struct Config {
     /// External interface on which VPN packets should be forwarded. Must be set in order to use VPN mode!
     #[getset(get = "pub")]
     nat_external_iface: Option<String>,
+
+    /// If set, randomizes source IPs of outgoing IPv6 TCP connections by drawing from this IPv6 range
+    #[getset(get = "pub")]
+    random_ipv6_range: Option<Ipv6Cidr>,
+
+    /// If set, sends IPv6 TCP connections from this interface name
+    #[getset(get = "pub")]
+    ipv6_interface: Option<String>,
 
     /// A mapping between an ASN and proxy servers to redirect all port 443 TCP connections to. This must be the address of some kind of "sniproxy" instance. Generally used to specially redirect e.g. Google traffic.
     ///

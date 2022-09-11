@@ -10,6 +10,7 @@ use env_logger::Env;
 use flate2::{write::GzEncoder, Compression};
 use jemallocator::Jemalloc;
 
+use smol::process::Command;
 use structopt::StructOpt;
 
 use crate::listen::{main_loop, RootCtx};
@@ -78,7 +79,33 @@ fn main() -> anyhow::Result<()> {
         config_iptables(nat_interface)?;
     }
     let ctx: RootCtx = config.into();
-    smolscale::block_on(main_loop(Arc::new(ctx)))
+    smolscale::block_on(async move {
+        if let Some(range) = ctx.config.random_ipv6_range() {
+            if let Some(iface) = ctx.config.ipv6_interface() {
+                Command::new("ip")
+                    .arg("-6")
+                    .arg("route")
+                    .arg("del")
+                    .arg("local")
+                    .arg(format!("{}", range))
+                    .spawn()?
+                    .output()
+                    .await?;
+                Command::new("ip")
+                    .arg("-6")
+                    .arg("route")
+                    .arg("add")
+                    .arg("local")
+                    .arg(format!("{}", range))
+                    .arg("dev")
+                    .arg(&iface)
+                    .spawn()?
+                    .output()
+                    .await?;
+            }
+        }
+        main_loop(Arc::new(ctx)).await
+    })
 }
 
 /// Configures iptables.

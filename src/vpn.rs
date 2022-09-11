@@ -1,6 +1,6 @@
 use bytes::Bytes;
-use cidr::{Cidr, Ipv4Cidr};
 
+use cidr_utils::cidr::Ipv4Cidr;
 use futures_util::TryFutureExt;
 use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
 
@@ -38,6 +38,10 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     loop {
         let (client, _) = listener.accept().await.unwrap();
+        log::debug!(
+            "accepted transparent tcp on {:?}",
+            client.as_ref().peer_addr()
+        );
         let ctx = ctx.clone();
         let rate_limit = Arc::new(RateLimiter::unlimited());
         let conn_task = smolscale::spawn(
@@ -100,7 +104,7 @@ pub async fn handle_vpn_session(
             .as_ref()
             .map(|official| official.exit_hostname().to_string())
             .unwrap_or_default()
-            .replace(".", "-")
+            .replace('.', "-")
     );
 
     let (send_down, recv_down) =
@@ -175,6 +179,12 @@ pub async fn handle_vpn_session(
                         }
                     };
                     if let Some(port) = port {
+                        // Block QUIC due to it performing badly over sositab etc
+                        if pkt.get_next_level_protocol() == IpNextHeaderProtocols::Udp
+                            && port == 443
+                        {
+                            continue;
+                        }
                         if crate::lists::BLACK_PORTS.contains(&port) {
                             continue;
                         }
@@ -253,8 +263,8 @@ impl IpAddrAssigner {
 
     /// Assigns a new IP address.
     pub fn assign(&self) -> AssignedIpv4Addr {
-        let first = u32::from_be_bytes(self.cidr.first_address().octets());
-        let last = u32::from_be_bytes(self.cidr.last_address().octets());
+        let first = self.cidr.first();
+        let last = self.cidr.last();
         loop {
             let candidate = rand::thread_rng().gen_range(first + 16, last - 16);
             let candidate = Ipv4Addr::from(candidate);

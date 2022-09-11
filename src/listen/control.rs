@@ -29,8 +29,8 @@ pub async fn handle_control(
             move |bridge_group: &str| {
                 format!(
                     "raw_flow.{}.{}",
-                    exit_hostname.replace(".", "-"),
-                    bridge_group.replace(".", "-")
+                    exit_hostname.replace('.', "-"),
+                    bridge_group.replace('.', "-")
                 )
             }
         };

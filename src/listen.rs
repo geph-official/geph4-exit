@@ -111,7 +111,7 @@ impl RootCtx {
             .as_ref()
             .map(|official| official.exit_hostname().to_owned())
             .unwrap_or_default()
-            .replace(".", "-")
+            .replace('.', "-")
     }
 
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {
@@ -202,7 +202,7 @@ async fn idlejitter(ctx: Arc<RootCtx>) {
         let elapsed = start.elapsed();
         if let Some(official) = ctx.config.official() {
             if rand::random::<f32>() < 0.01 {
-                let key = format!("idlejitter.{}", official.exit_hostname().replace(".", "-"));
+                let key = format!("idlejitter.{}", official.exit_hostname().replace('.', "-"));
                 ctx.stat_client
                     .as_ref()
                     .as_ref()
@@ -260,8 +260,8 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let bridge_pkt_key = move |bridge_group: &str| {
         format!(
             "raw_flow.{}.{}",
-            exit_hostname2.replace(".", "-"),
-            bridge_group.replace(".", "-")
+            exit_hostname2.replace('.', "-"),
+            bridge_group.replace('.', "-")
         )
     };
     // future that governs the "self bridge"
@@ -295,14 +295,14 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     };
     // future that uploads gauge statistics
     let gauge_fut = async {
-        let key = format!("session_count.{}", exit_hostname.replace(".", "-"));
-        let rskey = format!("raw_session_count.{}", exit_hostname.replace(".", "-"));
-        let memkey = format!("bytes_allocated.{}", exit_hostname.replace(".", "-"));
-        let connkey = format!("conn_count.{}", exit_hostname.replace(".", "-"));
-        let threadkey = format!("thread_key.{}", exit_hostname.replace(".", "-"));
-        let ctrlkey = format!("control_count.{}", exit_hostname.replace(".", "-"));
-        let taskkey = format!("task_count.{}", exit_hostname.replace(".", "-"));
-        let hijackkey = format!("hijackers.{}", exit_hostname.replace(".", "-"));
+        let key = format!("session_count.{}", exit_hostname.replace('.', "-"));
+        let rskey = format!("raw_session_count.{}", exit_hostname.replace('.', "-"));
+        let memkey = format!("bytes_allocated.{}", exit_hostname.replace('.', "-"));
+        let connkey = format!("conn_count.{}", exit_hostname.replace('.', "-"));
+        let threadkey = format!("thread_key.{}", exit_hostname.replace('.', "-"));
+        let ctrlkey = format!("control_count.{}", exit_hostname.replace('.', "-"));
+        let taskkey = format!("task_count.{}", exit_hostname.replace('.', "-"));
+        let hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
         let e = epoch::mib().unwrap();
         // let allocated = jemalloc_ctl::stats::allocated::mib().unwrap();
         let resident = jemalloc_ctl::stats::allocated::mib().unwrap();

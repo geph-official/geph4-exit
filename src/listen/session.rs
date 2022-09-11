@@ -73,7 +73,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                 RateLimiter::new(free_limit)
             }
         } else {
-            RateLimiter::unlimited()
+            RateLimiter::new(12500)
         }
     } else {
         RateLimiter::unlimited()
@@ -107,7 +107,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                     .timeout(Duration::from_secs(600))
                     .await;
                 if let Some(sig) = signal {
-                    let _ = sig?;
+                    sig?;
                     if !guard.swap(true, Ordering::SeqCst) {
                         root.session_count
                             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);

@@ -29,7 +29,7 @@ EOF
 echo "STEP 4: Creating systemd unit / 啓用 systemd 服務"
 sudo dd of=/etc/systemd/system/geph4-exit.service << EOF 
 [Unit]
-Description=Geph4 bridge service.
+Description=Geph4 exit service.
 [Service]
 Type=simple
 Restart=always
