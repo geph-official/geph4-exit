@@ -69,12 +69,13 @@ sysctl -p
 
 echo "STEP 3: Cloning geph4-exit repo"
 cd /opt/
+rm -rfv geph4-exit
 git clone https://github.com/geph-official/geph4-exit.git
 
 echo "STEP 4: Creating start script"
 dd of=/opt/geph4-exit-start << EOF
 #!/bin/sh
-export $PATH=$PATH:/root/.bin/cargo
+export PATH=$PATH:/root/.bin/cargo
 rustup update
 cd /opt/geph4-exit
 git pull
