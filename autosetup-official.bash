@@ -73,6 +73,8 @@ git clone https://github.com/geph-official/geph4-exit.git
 
 echo "STEP 4: Creating start script"
 dd of=/opt/geph4-exit-start << EOF
+#!/bin/sh
+echo $PATH=$PATH:/root/.bin/cargo
 rustup update
 cd /opt/geph4-exit
 git pull
