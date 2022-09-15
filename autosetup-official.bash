@@ -9,8 +9,7 @@ set -e
 
 
 echo "STEP 0: Installing prereqs"
-apt-get install build-essential
-apt-get install ndppd
+apt-get install build-essential git ndppd iptables
 
 
 echo "STEP 1: Installing Rust / 正在安裝 Rust"
