@@ -47,8 +47,7 @@ proxy $IPV6_INTERFACE {
 }
 EOF
 
-dd of=/etc/sysctl.conf << EOF
-net.ipv4.route.flush = 1
+dd of=/etc/sysctl.conf.d/geph.conf << EOF
 net.core.rmem_default=262144
 net.core.wmem_default=262144
 net.core.rmem_max=262144000
