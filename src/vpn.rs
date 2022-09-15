@@ -4,6 +4,7 @@ use cidr_utils::cidr::Ipv4Cidr;
 use futures_util::TryFutureExt;
 use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
 
+use moka::sync::Cache;
 use once_cell::sync::Lazy;
 use os_socketaddr::OsSocketAddr;
 use parking_lot::{Mutex, RwLock};
@@ -15,7 +16,7 @@ use smol::channel::Sender;
 use sosistab::{Buff, BuffMut};
 
 use geph4_protocol::VpnMessage;
-use std::{collections::BTreeMap, ops::DerefMut, os::unix::io::AsRawFd};
+use std::{collections::BTreeMap, net::IpAddr, ops::DerefMut, os::unix::io::AsRawFd};
 use std::{
     collections::HashSet,
     net::{Ipv4Addr, SocketAddr},
@@ -38,14 +39,15 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     loop {
         let (client, _) = listener.accept().await.unwrap();
-        log::debug!(
-            "accepted transparent tcp on {:?}",
-            client.as_ref().peer_addr()
-        );
         let ctx = ctx.clone();
         let rate_limit = Arc::new(RateLimiter::unlimited());
         let conn_task = smolscale::spawn(
             async move {
+                static CLIENT_ID_CACHE: Lazy<Cache<IpAddr, u64>> =
+                    Lazy::new(|| Cache::new(1_000_000));
+                let client_id = CLIENT_ID_CACHE.get_with(client.as_ref().peer_addr()?.ip(), || {
+                    rand::thread_rng().gen()
+                });
                 let client_fd = client.as_raw_fd();
                 let addr = unsafe {
                     let raw_addr = OsSocketAddr::new();
@@ -68,7 +70,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 };
                 let client = async_dup::Arc::new(client);
                 client.get_ref().set_nodelay(true)?;
-                proxy_loop(ctx, rate_limit, client, addr.to_string(), false).await
+                proxy_loop(ctx, rate_limit, client, client_id, addr.to_string(), false).await
             }
             .map_err(|e| log::trace!("vpn conn closed: {}", e)),
         );

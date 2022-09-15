@@ -11,6 +11,7 @@ use geph4_binder_transport::{BinderClient, BinderRequestData, BinderResponse};
 
 use futures_util::TryFutureExt;
 use geph4_protocol::Telemetry;
+use rand::Rng;
 use smol::prelude::*;
 use smol_timeout::TimeoutExt;
 use sosistab::RelConn;
@@ -126,6 +127,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
         let rate_limit = rate_limit.clone();
         let send_sess_alive = send_sess_alive.clone();
         async move {
+            let client_id: u64 = rand::thread_rng().gen();
             loop {
                 let mut client = sess
                     .accept_conn()
@@ -153,7 +155,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                             }
                             _ => {
                                 let _ = send_sess_alive.try_send(());
-                                proxy_loop(root, rate_limit, client, addr, true).await?
+                                proxy_loop(root, rate_limit, client, client_id, addr, true).await?
                             }
                         }
                         Ok(())

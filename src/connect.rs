@@ -73,6 +73,7 @@ pub async fn proxy_loop(
     ctx: Arc<RootCtx>,
     rate_limit: Arc<RateLimiter>,
     mut client: impl AsyncRead + AsyncWrite + Clone + Unpin,
+    client_id: u64,
     addr: String,
     count_stats: bool,
 ) -> anyhow::Result<()> {
@@ -166,8 +167,8 @@ pub async fn proxy_loop(
                 .and_then(|a| if addr.is_ipv6() { Some(a) } else { None })
         {
             let pool: Ipv6Cidr = pool;
-            let random_ipv6 =
-                Ipv6Addr::from(rand::thread_rng().gen_range(pool.first(), pool.last()));
+            fastrand::seed(client_id);
+            let random_ipv6 = Ipv6Addr::from(fastrand::u128(pool.first()..=pool.last()));
             log::trace!("assigned {:?}", random_ipv6);
             let socket = Socket::new(Domain::IPV6, Type::STREAM, Some(Protocol::TCP))?;
             socket.set_nonblocking(true)?;
