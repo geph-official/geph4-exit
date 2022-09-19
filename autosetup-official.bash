@@ -56,7 +56,6 @@ net.ipv4.tcp_congestion_control=bbr
 net.core.default_qdisc = fq
 net.ipv4.ip_forward=1
 net.ipv4.tcp_tw_reuse=1
-net.netfilter.nf_conntrack_max = 10000000
 net.ipv4.tcp_reordering=100
 net.ipv4.tcp_max_reordering=10000
 net.core.somaxconn = 65536
