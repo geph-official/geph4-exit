@@ -38,6 +38,10 @@ pub struct Config {
     #[getset(get = "pub")]
     ipv6_interface: Option<String>,
 
+    /// If set, forces all DNS requests to this destination.
+    #[getset(get = "pub")]
+    force_dns: Option<SocketAddr>,
+
     /// A mapping between an ASN and proxy servers to redirect all port 443 TCP connections to. This must be the address of some kind of "sniproxy" instance. Generally used to specially redirect e.g. Google traffic.
     ///
     /// TODO: Will be replaced once Geph gets proper IPv6 support!

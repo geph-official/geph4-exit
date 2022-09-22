@@ -181,7 +181,7 @@ pub async fn handle_vpn_session(
                         }
                     };
                     if let Some(port) = port {
-                        // Block QUIC due to it performing badly over sositab etc
+                        // Block QUIC due to it performing badly over sosistab etc
                         if pkt.get_next_level_protocol() == IpNextHeaderProtocols::Udp
                             && port == 443
                         {
@@ -217,9 +217,6 @@ static INCOMING_PKT_HANDLER: Lazy<smol::Task<()>> = Lazy::new(|| {
                 .await
                 .expect("cannot read from tun device");
             let pkt = &buf[..n];
-            if rand::random::<f32>() < 0.1 {
-                smol::future::yield_now().await;
-            }
             let map = INCOMING_MAP.read();
             let dest = Ipv4Packet::new(pkt).map(|pkt| map.get(&pkt.get_destination()));
             if let Some(Some(dest)) = dest {

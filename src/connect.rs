@@ -11,7 +11,6 @@ use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
-use rand::Rng;
 use smol::prelude::*;
 use smol::{
     io::{AsyncRead, AsyncWrite},
