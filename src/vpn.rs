@@ -1,3 +1,4 @@
+use anyhow::Context;
 use bytes::Bytes;
 
 use cidr_utils::cidr::Ipv4Cidr;
@@ -45,9 +46,10 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             async move {
                 static CLIENT_ID_CACHE: Lazy<Cache<IpAddr, u64>> =
                     Lazy::new(|| Cache::new(1_000_000));
-                let client_id = CLIENT_ID_CACHE.get_with(client.as_ref().peer_addr()?.ip(), || {
-                    rand::thread_rng().gen()
-                });
+                let client_id = CLIENT_ID_CACHE.get_with(
+                    client.as_ref().peer_addr().context("no peer addr")?.ip(),
+                    || rand::thread_rng().gen(),
+                );
                 let client_fd = client.as_raw_fd();
                 let addr = unsafe {
                     let raw_addr = OsSocketAddr::new();
@@ -69,7 +71,10 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     }
                 };
                 let client = async_dup::Arc::new(client);
-                client.get_ref().set_nodelay(true)?;
+                client
+                    .get_ref()
+                    .set_nodelay(true)
+                    .context("cannot set nodelay")?;
                 proxy_loop(ctx, rate_limit, client, client_id, addr.to_string(), false).await
             }
             .map_err(|e| log::debug!("vpn conn closed: {}", e)),
