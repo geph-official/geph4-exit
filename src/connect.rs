@@ -184,7 +184,7 @@ pub async fn proxy_loop(
             Async::<std::net::TcpStream>::connect(addr)
                 .timeout(Duration::from_secs(60))
                 .await
-                .ok_or_else(|| anyhow::anyhow!("connect timed out"))??
+                .ok_or_else(|| anyhow::anyhow!("connect timed out for {}", addr))??
         };
         remote.as_ref().set_nodelay(true)?;
 
