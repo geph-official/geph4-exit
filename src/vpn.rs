@@ -40,7 +40,6 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     loop {
         let (client, _) = listener.accept().await.unwrap();
-        log::debug!("vpn transparent accepted");
         let ctx = ctx.clone();
         let rate_limit = Arc::new(RateLimiter::unlimited());
         let conn_task = smolscale::spawn(
@@ -69,7 +68,6 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                         anyhow::bail!("SO_ORIGINAL_DST is not an IP address, aborting");
                     }
                 };
-                log::debug!("vpn transparent {peer_addr} going to {addr}");
                 let client = async_dup::Arc::new(client);
                 client
                     .get_ref()
