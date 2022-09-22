@@ -219,7 +219,7 @@ pub async fn proxy_loop(
         anyhow::Ok(())
     };
     if let Err(err) = f.await {
-        log::warn!("conn failed w/ {:?}", err);
+        log::trace!("conn failed w/ {:?}", err);
     }
     Ok(())
 }
