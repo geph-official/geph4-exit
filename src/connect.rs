@@ -95,7 +95,7 @@ pub async fn proxy_loop(
             anyhow::bail!("port blacklisted")
         }
         if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&addr.port()) {
-            anyhow::bail!("port not whitelisted")
+            anyhow::bail!("port {} not whitelisted", addr.port())
         }
 
         // Obtain ASN
