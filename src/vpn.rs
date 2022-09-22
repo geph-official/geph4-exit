@@ -47,10 +47,8 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             async move {
                 static CLIENT_ID_CACHE: Lazy<Cache<IpAddr, u64>> =
                     Lazy::new(|| Cache::new(1_000_000));
-                let client_id = CLIENT_ID_CACHE.get_with(
-                    client.as_ref().peer_addr().context("no peer addr")?.ip(),
-                    || rand::thread_rng().gen(),
-                );
+                let peer_addr = client.as_ref().peer_addr().context("no peer addr")?.ip();
+                let client_id = CLIENT_ID_CACHE.get_with(peer_addr, || rand::thread_rng().gen());
                 let client_fd = client.as_raw_fd();
                 let addr = unsafe {
                     let raw_addr = OsSocketAddr::new();
@@ -71,7 +69,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                         anyhow::bail!("SO_ORIGINAL_DST is not an IP address, aborting");
                     }
                 };
-                log::debug!("vpn transparent going to {addr}");
+                log::debug!("vpn transparent {peer_addr} going to {addr}");
                 let client = async_dup::Arc::new(client);
                 client
                     .get_ref()
