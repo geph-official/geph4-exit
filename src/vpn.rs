@@ -40,6 +40,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     loop {
         let (client, _) = listener.accept().await.unwrap();
+        log::debug!("vpn transparent accepted");
         let ctx = ctx.clone();
         let rate_limit = Arc::new(RateLimiter::unlimited());
         let conn_task = smolscale::spawn(
@@ -77,7 +78,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .context("cannot set nodelay")?;
                 proxy_loop(ctx, rate_limit, client, client_id, addr.to_string(), false).await
             }
-            .map_err(|e| log::debug!("vpn conn closed: {}", e)),
+            .map_err(|e| log::debug!("vpn conn closed: {:?}", e)),
         );
         conn_task.detach();
     }
