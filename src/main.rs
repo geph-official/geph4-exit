@@ -128,9 +128,14 @@ iptables -A FORWARD -i tun-geph -o $INTERFACE -j ACCEPT
 iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 "#,
         nat_interface,
-        force_dns.map(|d| {
-            format!("iptables -t nat -A PREROUTING -i tun-geph -p udp --dport 53 -j DNAT --to-destination {}", d)
-        }).unwrap_or_default()
+        force_dns
+            .map(|d| {
+                format!(
+                    "iptables -t nat -A PREROUTING -p udp --dport 53 -j DNAT --to {}",
+                    d
+                )
+            })
+            .unwrap_or_default()
     );
     let mut cmd = std::process::Command::new("sh")
         .arg("-c")
