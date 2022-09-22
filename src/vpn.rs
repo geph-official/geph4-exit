@@ -72,7 +72,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 client.get_ref().set_nodelay(true)?;
                 proxy_loop(ctx, rate_limit, client, client_id, addr.to_string(), false).await
             }
-            .map_err(|e| log::trace!("vpn conn closed: {}", e)),
+            .map_err(|e| log::debug!("vpn conn closed: {}", e)),
         );
         conn_task.detach();
     }
