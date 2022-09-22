@@ -71,6 +71,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                         anyhow::bail!("SO_ORIGINAL_DST is not an IP address, aborting");
                     }
                 };
+                log::debug!("vpn transparent going to {addr}");
                 let client = async_dup::Arc::new(client);
                 client
                     .get_ref()
