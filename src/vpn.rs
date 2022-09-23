@@ -8,7 +8,7 @@ use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
 use os_socketaddr::OsSocketAddr;
-use parking_lot::{Mutex, RwLock};
+use parking_lot::Mutex;
 use pnet_packet::{
     ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, udp::UdpPacket, Packet,
 };
@@ -17,11 +17,11 @@ use smol::channel::Sender;
 use sosistab::{Buff, BuffMut};
 
 use geph4_protocol::VpnMessage;
-use std::{collections::BTreeMap, net::IpAddr, ops::DerefMut, os::unix::io::AsRawFd};
 use std::{
     collections::HashSet,
-    net::{Ipv4Addr, SocketAddr},
-    ops::Deref,
+    net::{IpAddr, Ipv4Addr, SocketAddr},
+    ops::{Deref, DerefMut},
+    os::unix::prelude::AsRawFd,
     sync::Arc,
 };
 use tundevice::TunDevice;
@@ -100,7 +100,7 @@ pub async fn handle_vpn_session(
     let assigned_ip: Lazy<AssignedIpv4Addr> = Lazy::new(|| IpAddrAssigner::global().assign());
     let addr = assigned_ip.addr();
     scopeguard::defer!({
-        INCOMING_MAP.write().remove(&addr);
+        INCOMING_MAP.invalidate(&addr);
     });
     let stat_key = format!(
         "exit_usage.{}",
@@ -114,7 +114,7 @@ pub async fn handle_vpn_session(
 
     let (send_down, recv_down) =
         smol::channel::bounded(if rate_limit.is_unlimited() { 4096 } else { 64 });
-    INCOMING_MAP.write().insert(addr, send_down);
+    INCOMING_MAP.insert(addr, send_down);
     let _down_task: smol::Task<anyhow::Result<()>> = {
         let stat_key = stat_key.clone();
         let ctx = ctx.clone();
@@ -208,7 +208,8 @@ pub async fn handle_vpn_session(
 
 /// Mapping for incoming packets
 #[allow(clippy::type_complexity)]
-static INCOMING_MAP: Lazy<RwLock<BTreeMap<Ipv4Addr, Sender<Buff>>>> = Lazy::new(Default::default);
+static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Buff>>> =
+    Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
 
 /// Incoming packet handler
 static INCOMING_PKT_HANDLER: Lazy<smol::Task<()>> = Lazy::new(|| {
@@ -220,8 +221,7 @@ static INCOMING_PKT_HANDLER: Lazy<smol::Task<()>> = Lazy::new(|| {
                 .await
                 .expect("cannot read from tun device");
             let pkt = &buf[..n];
-            let map = INCOMING_MAP.read();
-            let dest = Ipv4Packet::new(pkt).map(|pkt| map.get(&pkt.get_destination()));
+            let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
             if let Some(Some(dest)) = dest {
                 let _ = dest.try_send(pkt.into());
             }

@@ -62,6 +62,7 @@ net.core.somaxconn = 65536
 net.ipv4.tcp_mem = 786432 1048576 26777216
 
 net.ipv6.ip_nonlocal_bind=1
+net.ipv4.conf.all.route_localnet=1
 EOF
 sysctl -p
 
