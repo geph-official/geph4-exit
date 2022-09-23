@@ -10,20 +10,22 @@ pub struct RateLimiter {
         governor::clock::MonotonicClock,
     >,
     unlimited: bool,
+    limit: u32,
 }
 
 impl RateLimiter {
     /// Creates a new rate limiter with the given speed limit, in KB/s
-    pub fn new(limit: u32) -> Self {
-        let limit = NonZeroU32::new(limit * 1024).unwrap();
+    pub fn new(l: u32) -> Self {
+        let limit = NonZeroU32::new(l * 1024).unwrap();
         let inner = governor::RateLimiter::new(
-            Quota::per_second(limit).allow_burst(NonZeroU32::new(128 * 1024).unwrap()),
+            Quota::per_second(limit).allow_burst(NonZeroU32::new(l * 256).unwrap()),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
         );
         Self {
             inner,
             unlimited: false,
+            limit: l,
         }
     }
 
@@ -37,12 +39,18 @@ impl RateLimiter {
         Self {
             inner,
             unlimited: true,
+            limit: u32::MAX,
         }
     }
 
     /// Checks whether the limiter is unlimited.
     pub fn is_unlimited(&self) -> bool {
         self.unlimited
+    }
+
+    /// Returns the actual limit in KiB/s.
+    pub fn limit(&self) -> u32 {
+        self.limit
     }
 
     /// Waits until the given number of bytes can be let through.

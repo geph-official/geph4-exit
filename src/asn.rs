@@ -1,13 +1,11 @@
-use std::{
-    io::BufReader,
-    net::{IpAddr, Ipv4Addr},
-};
-
-use cached::proc_macro::cached;
 use flate2::bufread::GzDecoder;
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
 use rangemap::RangeMap;
+use std::{
+    io::BufReader,
+    net::{IpAddr, Ipv4Addr},
+};
 
 static IPV4_MAP: Lazy<RangeMap<Ipv4Addr, u32>> = Lazy::new(|| {
     use std::io::prelude::*;

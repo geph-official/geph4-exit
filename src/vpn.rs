@@ -112,8 +112,11 @@ pub async fn handle_vpn_session(
             .replace('.', "-")
     );
 
-    let (send_down, recv_down) =
-        smol::channel::bounded(if rate_limit.is_unlimited() { 4096 } else { 64 });
+    let (send_down, recv_down) = smol::channel::bounded(if rate_limit.is_unlimited() {
+        65536
+    } else {
+        (rate_limit.limit() / 4) as usize
+    });
     INCOMING_MAP.insert(addr, send_down);
     let _down_task: smol::Task<anyhow::Result<()>> = {
         let stat_key = stat_key.clone();
