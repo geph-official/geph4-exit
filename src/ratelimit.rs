@@ -18,7 +18,7 @@ impl RateLimiter {
     pub fn new(l: u32) -> Self {
         let limit = NonZeroU32::new(l * 1024).unwrap();
         let inner = governor::RateLimiter::new(
-            Quota::per_second(limit).allow_burst(NonZeroU32::new(l * 64).unwrap()),
+            Quota::per_second(limit).allow_burst(NonZeroU32::new(l * 256).unwrap()),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
         );
