@@ -225,48 +225,31 @@ static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Buff>>> =
     Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
 
 /// Incoming packet handler
-static INCOMING_PKT_HANDLER: Lazy<smol::Task<()>> = Lazy::new(|| {
-    smolscale::spawn(async {
-        let mut buf = [0; 2048];
-        loop {
-            let n = RAW_TUN
-                .read_raw(&mut buf)
-                .await
-                .expect("cannot read from tun device");
-            let pkt = &buf[..n];
-            let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-            if let Some(Some(dest)) = dest {
-                let _ = dest.try_send(pkt.into());
+static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
+    std::thread::Builder::new()
+        .name("tun-reader".into())
+        .spawn(|| {
+            let mut buf = [0; 2048];
+            let fd = RAW_TUN.dup_rawfd();
+            unsafe {
+                let mut flags = libc::fcntl(fd, F_GETFL);
+                flags &= !O_NONBLOCK;
+                fcntl(fd, F_SETFL, flags);
             }
-        }
-    })
+            let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
+            loop {
+                let n = reader.read(&mut buf).expect("cannot read from tun device");
+                let pkt = &buf[..n];
+                let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
+                if let Some(Some(dest)) = dest {
+                    if let Err(err) = dest.try_send(pkt.into()) {
+                        log::trace!("error forwarding packet obtained from tun: {:?}", err);
+                    }
+                }
+            }
+        })
+        .unwrap()
 });
-
-// static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
-//     std::thread::Builder::new()
-//         .name("tun-reader".into())
-//         .spawn(|| {
-//             let mut buf = [0; 2048];
-//             let fd = RAW_TUN.dup_rawfd();
-//             unsafe {
-//                 let mut flags = libc::fcntl(fd, F_GETFL);
-//                 flags &= !O_NONBLOCK;
-//                 fcntl(fd, F_SETFL, flags);
-//             }
-//             let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
-//             loop {
-//                 let n = reader.read(&mut buf).expect("cannot read from tun device");
-//                 let pkt = &buf[..n];
-//                 let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-//                 if let Some(Some(dest)) = dest {
-//                     if let Err(err) = dest.try_send(pkt.into()) {
-//                         log::trace!("error forwarding packet obtained from tun: {:?}", err);
-//                     }
-//                 }
-//             }
-//         })
-//         .unwrap()
-// });
 
 /// The raw TUN device.
 static RAW_TUN: Lazy<TunDevice> = Lazy::new(|| {
