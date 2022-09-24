@@ -3320,9 +3320,9 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.3.31"
+version = "0.3.32"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c3555dd826dd8dd4060fede04fff186ee752cf438ac789ff4d04d4faae73847"
+checksum = "f766635f2ce26da7fe3cbe1777bf1f68d7bfdd76cc1a6961154f24f6c8581c59"
 dependencies = [
  "anyhow",
  "async-channel",
