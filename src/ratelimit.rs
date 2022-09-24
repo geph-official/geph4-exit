@@ -1,6 +1,22 @@
 use std::num::NonZeroU32;
 
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
+use once_cell::sync::Lazy;
+
+pub static STAT_LIMITER: Lazy<
+    governor::RateLimiter<
+        NotKeyed,
+        governor::state::InMemoryState,
+        governor::clock::MonotonicClock,
+    >,
+> = Lazy::new(|| {
+    let limit = NonZeroU32::new(10).unwrap();
+    governor::RateLimiter::new(
+        Quota::per_second(limit).allow_burst(NonZeroU32::new(10).unwrap()),
+        governor::state::InMemoryState::default(),
+        &governor::clock::MonotonicClock::default(),
+    )
+});
 
 /// A generic rate limiter.
 pub struct RateLimiter {

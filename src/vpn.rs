@@ -27,7 +27,11 @@ use std::{
 };
 use tundevice::TunDevice;
 
-use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
+use crate::{
+    connect::proxy_loop,
+    listen::RootCtx,
+    ratelimit::{RateLimiter, STAT_LIMITER},
+};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
@@ -141,7 +145,7 @@ pub async fn handle_vpn_session(
             }
         })
     };
-
+    let mut stat_count = 0u64;
     loop {
         let bts = mux.recv_urel().await?;
         on_activity();
@@ -160,8 +164,10 @@ pub async fn handle_vpn_session(
             }
             VpnMessage::Payload(bts) => {
                 if let Some(stat_client) = ctx.stat_client.as_ref() {
-                    if fastrand::f32() < 0.01 {
-                        stat_client.count(&stat_key, bts.len() as f64 * 100.0)
+                    stat_count += bts.len() as u64;
+                    if fastrand::f64() < 0.1 && STAT_LIMITER.check().is_ok() {
+                        stat_client.count(&stat_key, stat_count as f64);
+                        stat_count = 0;
                     }
                 }
                 let pkt = Ipv4Packet::new(&bts);
