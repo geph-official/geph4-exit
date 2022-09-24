@@ -9,7 +9,7 @@ set -e
 
 
 echo "STEP 0: Installing prereqs"
-apt-get install build-essential git ndppd iptables
+apt-get install -y build-essential git ndppd iptables
 
 
 echo "STEP 1: Installing Rust / 正在安裝 Rust"
@@ -58,7 +58,7 @@ net.ipv4.ip_forward=1
 net.ipv4.tcp_tw_reuse=1
 net.ipv4.tcp_reordering=100
 net.ipv4.tcp_max_reordering=10000
-net.core.somaxconn = 65536
+net.core.somaxconn = 6553600
 net.ipv4.tcp_mem = 786432 1048576 26777216
 
 net.ipv6.ip_nonlocal_bind=1
@@ -92,8 +92,10 @@ Description=Geph4 exit service.
 Type=simple
 Restart=always
 ExecStart=/opt/geph4-exit-start
-LimitNOFILE=65536
+LimitNOFILE=655360
 User=root
+Environment="SMOLSCALE_USE_AGEX=1"
+
 [Install]
 WantedBy=multi-user.target
 EOF
