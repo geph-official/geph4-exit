@@ -205,7 +205,7 @@ pub async fn proxy_loop(
         // smol::io::copy(client, remote).await?;
 
         let us1 = upload_stat.clone();
-        let up = smolscale::spawn(geph4_aioutils::copy_with_stats_async(
+        let _up = smolscale::spawn(geph4_aioutils::copy_with_stats_async(
             remote2,
             client2,
             move |n| {
@@ -216,21 +216,24 @@ pub async fn proxy_loop(
                 }
             },
         ));
-        let down = smolscale::spawn(geph4_aioutils::copy_with_stats(client, remote, move |n| {
+        geph4_aioutils::copy_with_stats(client, remote, move |n| {
             upload_stat(n);
-        }));
+        })
+        .await?;
+        Ok(())
+        // let down = smolscale::spawn();
 
-        smol::future::race(up, down)
-            .or(async {
-                // "grace period"
-                smol::Timer::after(Duration::from_secs(30)).await;
-                let killer = ctx.kill_event.listen();
-                killer.await;
-                log::warn!("killing connection due to connection kill event");
-                Ok(())
-            })
-            .await?;
-        anyhow::Ok(())
+        // smol::future::race(up, down)
+        //     .or(async {
+        //         // "grace period"
+        //         smol::Timer::after(Duration::from_secs(30)).await;
+        //         let killer = ctx.kill_event.listen();
+        //         killer.await;
+        //         log::warn!("killing connection due to connection kill event");
+        //         Ok(())
+        //     })
+        //     .await?;
+        // anyhow::Ok(())
     };
     if let Err(err) = f.await {
         log::trace!("conn failed w/ {:?}", err);

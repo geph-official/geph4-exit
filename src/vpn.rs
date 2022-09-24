@@ -19,9 +19,10 @@ use sosistab::{Buff, BuffMut};
 use geph4_protocol::VpnMessage;
 use std::{
     collections::HashSet,
+    io::Read,
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
-    os::unix::prelude::AsRawFd,
+    os::unix::prelude::{AsRawFd, FromRawFd},
     sync::Arc,
 };
 use tundevice::TunDevice;
@@ -215,21 +216,23 @@ static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Buff>>> =
     Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
 
 /// Incoming packet handler
-static INCOMING_PKT_HANDLER: Lazy<smol::Task<()>> = Lazy::new(|| {
-    smolscale::spawn(async {
-        let mut buf = [0; 2048];
-        loop {
-            let n = RAW_TUN
-                .read_raw(&mut buf)
-                .await
-                .expect("cannot read from tun device");
-            let pkt = &buf[..n];
-            let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-            if let Some(Some(dest)) = dest {
-                let _ = dest.try_send(pkt.into());
+static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
+    std::thread::Builder::new()
+        .name("tun-reader".into())
+        .spawn(|| {
+            let mut buf = [0; 2048];
+            let fd = RAW_TUN.dup_rawfd();
+            let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
+            loop {
+                let n = reader.read(&mut buf).expect("cannot read from tun device");
+                let pkt = &buf[..n];
+                let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
+                if let Some(Some(dest)) = dest {
+                    let _ = dest.try_send(pkt.into());
+                }
             }
-        }
-    })
+        })
+        .unwrap()
 });
 
 /// The raw TUN device.

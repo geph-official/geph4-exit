@@ -55,7 +55,6 @@ impl RateLimiter {
 
     /// Waits until the given number of bytes can be let through.
     pub async fn wait(&self, bytes: usize) {
-        smol::future::yield_now().await;
         if bytes == 0 || self.unlimited {
             return;
         }
