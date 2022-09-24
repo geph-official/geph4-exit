@@ -1,4 +1,4 @@
-use std::num::NonZeroU32;
+use std::{num::NonZeroU32, sync::atomic::AtomicU64};
 
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use once_cell::sync::Lazy;
@@ -17,6 +17,8 @@ pub static STAT_LIMITER: Lazy<
         &governor::clock::MonotonicClock::default(),
     )
 });
+
+pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
 
 /// A generic rate limiter.
 pub struct RateLimiter {

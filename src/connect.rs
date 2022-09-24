@@ -12,7 +12,7 @@ use std::{
 use crate::{
     connect::sni_decode::decode_sni_from_start,
     listen::RootCtx,
-    ratelimit::{RateLimiter, STAT_LIMITER},
+    ratelimit::{RateLimiter, STAT_LIMITER, TOTAL_BW_COUNT},
 };
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
@@ -116,7 +116,6 @@ pub async fn proxy_loop(
         );
 
         // Upload official stats
-        let up_count = AtomicU64::new(0);
         let upload_stat = Arc::new({
             let ctx = ctx.clone();
             let key = if let Some(off) = ctx.config.official() {
@@ -126,10 +125,10 @@ pub async fn proxy_loop(
             };
             move |n| {
                 if count_stats {
-                    up_count.fetch_add(n as u64, Ordering::Relaxed);
+                    TOTAL_BW_COUNT.fetch_add(n as u64, Ordering::Relaxed);
                     if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
                         if let Some(op) = ctx.stat_client.as_ref().as_ref() {
-                            op.count(&key, up_count.swap(0, Ordering::Relaxed) as f64)
+                            op.count(&key, TOTAL_BW_COUNT.swap(0, Ordering::Relaxed) as f64)
                         }
                     }
                 }

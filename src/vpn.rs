@@ -23,14 +23,14 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
     os::unix::prelude::{AsRawFd, FromRawFd},
-    sync::Arc,
+    sync::{atomic::Ordering, Arc},
 };
 use tundevice::TunDevice;
 
 use crate::{
     connect::proxy_loop,
     listen::RootCtx,
-    ratelimit::{RateLimiter, STAT_LIMITER},
+    ratelimit::{RateLimiter, STAT_LIMITER, TOTAL_BW_COUNT},
 };
 
 /// Runs the transparent proxy helper
@@ -128,14 +128,14 @@ pub async fn handle_vpn_session(
         let ctx = ctx.clone();
         let mux = mux.clone();
         smolscale::spawn(async move {
-            let mut stat_count = 0u64;
             loop {
                 let bts = recv_down.recv().await?;
                 if let Some(stat_client) = ctx.stat_client.as_ref() {
-                    stat_count += bts.len() as u64;
+                    let n = bts.len();
+                    TOTAL_BW_COUNT.fetch_add(n as u64, Ordering::Relaxed);
                     if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        stat_client.count(&stat_key, stat_count as f64);
-                        stat_count = 0;
+                        stat_client
+                            .count(&stat_key, TOTAL_BW_COUNT.swap(0, Ordering::Relaxed) as f64)
                     }
                 }
                 rate_limit.wait(bts.len()).await;
