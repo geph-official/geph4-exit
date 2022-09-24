@@ -144,7 +144,7 @@ impl RootCtx {
             move |len, _| {
                 if let Some(stat) = stat.as_ref() {
                     stat_count.fetch_add(len as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.1 && STAT_LIMITER.check().is_ok() {
+                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
                         stat.count(&flow_key, stat_count.swap(0, Ordering::Relaxed) as f64)
                     }
                 }
@@ -152,7 +152,7 @@ impl RootCtx {
             move |len, _| {
                 if let Some(stat2) = stat2.as_ref() {
                     sc2.fetch_add(len as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.1 && STAT_LIMITER.check().is_ok() {
+                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
                         stat2.count(&fk2, sc2.swap(0, Ordering::Relaxed) as f64)
                     }
                 }

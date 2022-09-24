@@ -12,7 +12,7 @@ pub static STAT_LIMITER: Lazy<
 > = Lazy::new(|| {
     let limit = NonZeroU32::new(10).unwrap();
     governor::RateLimiter::new(
-        Quota::per_second(limit).allow_burst(NonZeroU32::new(10).unwrap()),
+        Quota::per_second(limit).allow_burst(NonZeroU32::new(1000).unwrap()),
         governor::state::InMemoryState::default(),
         &governor::clock::MonotonicClock::default(),
     )
