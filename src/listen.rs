@@ -1,13 +1,13 @@
 use std::{
     net::{IpAddr, SocketAddr},
     sync::{
-        atomic::{AtomicUsize, Ordering},
+        atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc,
     },
     time::{Duration, Instant},
 };
 
-use crate::{asn::MY_PUBLIC_IP, config::Config, vpn};
+use crate::{asn::MY_PUBLIC_IP, config::Config, ratelimit::STAT_LIMITER, vpn};
 use event_listener::Event;
 use geph4_binder_transport::{BinderClient, HttpClient};
 
@@ -136,20 +136,24 @@ impl RootCtx {
         } else {
             self.sosistab_sk.clone()
         };
+        let stat_count = Arc::new(AtomicU64::new(0));
+        let sc2 = stat_count.clone();
         sosistab::Listener::listen_udp(
             addr,
             long_sk,
             move |len, _| {
                 if let Some(stat) = stat.as_ref() {
-                    if fastrand::f32() < 0.05 {
-                        stat.count(&flow_key, len as f64 * 20.0)
+                    stat_count.fetch_add(len as u64, Ordering::Relaxed);
+                    if fastrand::f64() < 0.1 && STAT_LIMITER.check().is_ok() {
+                        stat.count(&flow_key, stat_count.swap(0, Ordering::Relaxed) as f64)
                     }
                 }
             },
             move |len, _| {
                 if let Some(stat2) = stat2.as_ref() {
-                    if fastrand::f32() < 0.05 {
-                        stat2.count(&fk2, len as f64 * 20.0)
+                    sc2.fetch_add(len as u64, Ordering::Relaxed);
+                    if fastrand::f64() < 0.1 && STAT_LIMITER.check().is_ok() {
+                        stat2.count(&fk2, sc2.swap(0, Ordering::Relaxed) as f64)
                     }
                 }
             },
