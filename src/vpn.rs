@@ -233,7 +233,9 @@ static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
                 let pkt = &buf[..n];
                 let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
                 if let Some(Some(dest)) = dest {
-                    let _ = dest.try_send(pkt.into());
+                    if let Err(err) = dest.try_send(pkt.into()) {
+                        log::warn!("error forwarding packet obtained from tun: {:?}", err);
+                    }
                 }
             }
         })
