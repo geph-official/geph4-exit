@@ -43,10 +43,7 @@ pnet_packet= "0.28.0"
 rangemap= "0.1.14"
 dashmap= "4.0.2"
 governor= "0.3.2"
-# aioutils={path="../lib/aioutils"}
-# vpn_structs={path="../lib/vpn_structs"}
-
-libc= "0.2.126"
+libc = "0.2.126"
 os_socketaddr= "0.2.1"
 ureq= "1.5.5"
 flate2= "1.0.24"

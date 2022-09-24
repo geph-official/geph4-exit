@@ -3,7 +3,7 @@ use bytes::Bytes;
 
 use cidr_utils::cidr::Ipv4Cidr;
 use futures_util::TryFutureExt;
-use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
+use libc::{c_void, fcntl, F_GETFL, F_SETFL, O_NONBLOCK, SOL_IP, SO_ORIGINAL_DST};
 
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
@@ -222,6 +222,11 @@ static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
         .spawn(|| {
             let mut buf = [0; 2048];
             let fd = RAW_TUN.dup_rawfd();
+            unsafe {
+                let mut flags = libc::fcntl(fd, F_GETFL);
+                flags &= !O_NONBLOCK;
+                fcntl(fd, F_SETFL, flags);
+            }
             let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
             loop {
                 let n = reader.read(&mut buf).expect("cannot read from tun device");
