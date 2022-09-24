@@ -126,12 +126,16 @@ pub async fn proxy_loop(
 
         // Read the initial burst
         let mut initial_burst = [0u8; 65536];
-        let initial_burst = if let Some(Ok(n)) = client
-            .read(&mut initial_burst)
-            .timeout(Duration::from_millis(1000))
-            .await
-        {
-            Some(&initial_burst[..n])
+        let initial_burst = if ctx.config.random_ipv6_range().is_some() {
+            if let Some(Ok(n)) = client
+                .read(&mut initial_burst)
+                .timeout(Duration::from_millis(1000))
+                .await
+            {
+                Some(&initial_burst[..n])
+            } else {
+                None
+            }
         } else {
             None
         };
