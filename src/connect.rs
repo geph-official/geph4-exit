@@ -108,21 +108,21 @@ pub async fn proxy_loop(
         );
 
         // Upload official stats
-        // let upload_stat = {
-        //     let ctx = ctx.clone();
-        //     let key = if let Some(off) = ctx.config.official() {
-        //         format!("exit_usage.{}", off.exit_hostname().replace('.', "-"))
-        //     } else {
-        //         "".into()
-        //     };
-        //     move |n| {
-        //         if fastrand::f32() < 0.01 && count_stats {
-        //             if let Some(op) = ctx.stat_client.as_ref().as_ref() {
-        //                 op.count(&key, n as f64 * 100.0)
-        //             }
-        //         }
-        //     }
-        // };
+        let upload_stat = Arc::new({
+            let ctx = ctx.clone();
+            let key = if let Some(off) = ctx.config.official() {
+                format!("exit_usage.{}", off.exit_hostname().replace('.', "-"))
+            } else {
+                "".into()
+            };
+            move |n| {
+                if fastrand::f32() < 0.01 && count_stats {
+                    if let Some(op) = ctx.stat_client.as_ref().as_ref() {
+                        op.count(&key, n as f64 * 100.0)
+                    }
+                }
+            }
+        });
 
         // Read the initial burst
         let mut initial_burst = [0u8; 65536];
@@ -199,31 +199,37 @@ pub async fn proxy_loop(
         let remote = async_dup::Arc::new(remote);
         let remote2 = remote.clone();
         let client2 = client.clone();
-        let _t = smolscale::spawn(async move {
-            let _ = smol::io::copy(remote2, client2).await;
-        });
-        smol::io::copy(client, remote).await?;
-        // smol::future::race(
-        //     geph4_aioutils::copy_with_stats_async(remote2, client2, |n| {
-        //         upload_stat(n);
-        //         let rate_limit = rate_limit.clone();
-        //         async move {
-        //             rate_limit.wait(n).await;
-        //         }
-        //     }),
-        //     geph4_aioutils::copy_with_stats(client, remote, |n| {
-        //         upload_stat(n);
-        //     }),
-        // )
-        // .or(async {
-        //     // "grace period"
-        //     smol::Timer::after(Duration::from_secs(30)).await;
-        //     let killer = ctx.kill_event.listen();
-        //     killer.await;
-        //     log::warn!("killing connection due to connection kill event");
-        //     Ok(())
-        // })
-        // .await?;
+        // let _t = smolscale::spawn(async move {
+        //     let _ = smol::io::copy(remote2, client2).await;
+        // });
+        // smol::io::copy(client, remote).await?;
+
+        let us1 = upload_stat.clone();
+        let up = smolscale::spawn(geph4_aioutils::copy_with_stats_async(
+            remote2,
+            client2,
+            move |n| {
+                us1(n);
+                let rate_limit = rate_limit.clone();
+                async move {
+                    rate_limit.wait(n).await;
+                }
+            },
+        ));
+        let down = smolscale::spawn(geph4_aioutils::copy_with_stats(client, remote, move |n| {
+            upload_stat(n);
+        }));
+
+        smol::future::race(up, down)
+            .or(async {
+                // "grace period"
+                smol::Timer::after(Duration::from_secs(30)).await;
+                let killer = ctx.kill_event.listen();
+                killer.await;
+                log::warn!("killing connection due to connection kill event");
+                Ok(())
+            })
+            .await?;
         anyhow::Ok(())
     };
     if let Err(err) = f.await {
