@@ -231,7 +231,16 @@ pub async fn proxy_loop(
         geph4_aioutils::copy_with_stats(client, remote, move |n| {
             upload_stat(n);
         })
+        .or(async {
+            // "grace period"
+            smol::Timer::after(Duration::from_secs(30)).await;
+            let killer = ctx.kill_event.listen();
+            killer.await;
+            log::warn!("killing connection due to connection kill event");
+            Ok(())
+        })
         .await?;
+
         Ok(())
         // let down = smolscale::spawn();
 
