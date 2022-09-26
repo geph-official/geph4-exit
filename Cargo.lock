@@ -1670,6 +1670,7 @@ dependencies = [
  "lru",
  "mizaru",
  "moka",
+ "nix 0.25.0",
  "num_cpus",
  "once_cell",
  "os_socketaddr",
@@ -2221,6 +2222,20 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
  "memoffset",
+]
+
+[[package]]
+name = "nix"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e322c04a9e3440c327fca7b6c8a63e6890a32fa2ad689db972425f07e0d22abb"
+dependencies = [
+ "autocfg 1.1.0",
+ "bitflags",
+ "cfg-if 1.0.0",
+ "libc",
+ "memoffset",
+ "pin-utils",
 ]
 
 [[package]]
@@ -3321,8 +3336,6 @@ dependencies = [
 [[package]]
 name = "smolscale"
 version = "0.3.32"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f766635f2ce26da7fe3cbe1777bf1f68d7bfdd76cc1a6961154f24f6c8581c59"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -3402,7 +3415,7 @@ dependencies = [
  "hex",
  "im",
  "indexmap",
- "nix",
+ "nix 0.23.1",
  "nonzero_ext 0.3.0",
  "num_cpus",
  "once_cell",

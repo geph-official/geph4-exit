@@ -30,7 +30,7 @@ conn_count_limit = 100000
 [official]
 exit_hostname = "$EXIT_HOSTNAME"
 bridge_secret = "$BRIDGE_SECRET"
-free_limit = 200
+free_limit = $FREE_LIMIT
 
 EOF
 
@@ -108,4 +108,4 @@ sudo systemctl daemon-reexec
 sudo systemctl restart geph4-exit
 
 echo "STEP 6: Waiting for public key..."
-sudo journalctl | grep geph | grep listening | head
+journalctl -f -u geph4-exit

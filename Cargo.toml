@@ -73,6 +73,7 @@ moka = "0.9.4"
 cidr-utils = {version="0.5.7", features=["serde"]}
 socket2 = "0.4.7"
 byteorder = "1.4.3"
+nix = "0.25.0"
 
 [profile.release]
 panic = "abort"
@@ -80,5 +81,5 @@ opt-level=3
 debug=0
 # lto=false
 
-# [patch.crates-io]
-# sosistab={path="../sosistab"}
+[patch.crates-io]
+smolscale={path="../smolscale"}

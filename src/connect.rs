@@ -1,11 +1,8 @@
 mod sni_decode;
 
 use std::{
-    net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6},
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Arc,
-    },
+    net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6},
+    sync::{atomic::Ordering, Arc},
     time::Duration,
 };
 
@@ -41,26 +38,23 @@ async fn resolve_name_inner(name: String) -> anyhow::Result<SocketAddr> {
     }
 
     let vec: Vec<SocketAddr> = smol::net::resolve(&name).await?.into_iter().collect();
-    let v4s: Vec<SocketAddrV4> = vec
-        .iter()
-        .filter_map(|v| match v {
-            SocketAddr::V4(v) => Some(*v),
-            _ => None,
-        })
-        .collect();
-    let v6s: Vec<SocketAddrV6> = vec
-        .iter()
-        .filter_map(|v| match v {
-            SocketAddr::V6(v) => Some(*v),
-            _ => None,
-        })
-        .collect();
-    if let Some(s) = v6s.get(0) {
-        DNS_CACHE.insert(name, (*s).into());
-        Ok((*s).into())
-    } else if let Some(s) = v4s.get(0) {
-        DNS_CACHE.insert(name, (*s).into());
-        Ok((*s).into())
+    // let v4s: Vec<SocketAddrV4> = vec
+    //     .iter()
+    //     .filter_map(|v| match v {
+    //         SocketAddr::V4(v) => Some(*v),
+    //         _ => None,
+    //     })
+    //     .collect();
+    // let v6s: Vec<SocketAddrV6> = vec
+    //     .iter()
+    //     .filter_map(|v| match v {
+    //         SocketAddr::V6(v) => Some(*v),
+    //         _ => None,
+    //     })
+    //     .collect();
+    if let Some(s) = vec.get(0) {
+        DNS_CACHE.insert(name, *s);
+        Ok(*s)
     } else {
         anyhow::bail!("no suitable IP address")
     }
