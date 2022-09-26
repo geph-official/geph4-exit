@@ -81,5 +81,5 @@ opt-level=3
 debug=0
 # lto=false
 
-[patch.crates-io]
-smolscale={path="../smolscale"}
+# [patch.crates-io]
+# smolscale={path="../smolscale"}
