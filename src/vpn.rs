@@ -260,6 +260,7 @@ static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
                         .map(|s| s.bytes)
                         .collect::<Vec<_>>()
                 };
+                log::debug!("tun got {} mmsg", result.len());
                 for (n, buf) in result.into_iter().zip(bufs.iter()) {
                     let pkt = &buf[..n];
                     let dest =
