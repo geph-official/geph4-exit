@@ -23,7 +23,7 @@ use std::{
     io::{IoSliceMut, Read},
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
-    os::unix::prelude::AsRawFd,
+    os::unix::prelude::{AsRawFd, FromRawFd},
     sync::{atomic::Ordering, Arc},
 };
 use tundevice::TunDevice;
@@ -230,7 +230,7 @@ static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
     std::thread::Builder::new()
         .name("tun-reader".into())
         .spawn(|| {
-            let _buf = [0; 2048];
+            let mut buf = [0; 2048];
             let fd = RAW_TUN.dup_rawfd();
             // set into BLOCKING mode
             unsafe {
@@ -238,50 +238,50 @@ static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
                 flags &= !O_NONBLOCK;
                 fcntl(fd, F_SETFL, flags);
             }
-            // let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
-            let mut bufs = vec![[0u8; 2048]; 128];
-            loop {
-                let result = {
-                    let mut mmsg_buffers = bufs
-                        .iter_mut()
-                        .map(|b| [IoSliceMut::new(b)])
-                        .collect::<Vec<_>>();
-                    let mut mmsg_buffers = mmsg_buffers
-                        .iter_mut()
-                        .map(|b| RecvMmsgData {
-                            iov: b,
-                            cmsg_buffer: None,
-                        })
-                        .collect::<Vec<_>>();
-                    let mmsg_buffers = mmsg_buffers.iter_mut().collect::<Vec<_>>();
-                    recvmmsg::<_, SockaddrStorage>(fd, mmsg_buffers, MsgFlags::empty(), None)
-                        .expect("recvmmsg failed")
-                        .into_iter()
-                        .map(|s| s.bytes)
-                        .collect::<Vec<_>>()
-                };
-                log::debug!("tun got {} mmsg", result.len());
-                for (n, buf) in result.into_iter().zip(bufs.iter()) {
-                    let pkt = &buf[..n];
-                    let dest =
-                        Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-                    if let Some(Some(dest)) = dest {
-                        if let Err(err) = dest.try_send(pkt.into()) {
-                            log::trace!("error forwarding packet obtained from tun: {:?}", err);
-                        }
-                    }
-                }
-            }
+            let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
+            // let mut bufs = vec![[0u8; 2048]; 128];
             // loop {
-            //     let n = reader.read(&mut buf).expect("cannot read from tun device");
-            //     let pkt = &buf[..n];
-            //     let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-            //     if let Some(Some(dest)) = dest {
-            //         if let Err(err) = dest.try_send(pkt.into()) {
-            //             log::trace!("error forwarding packet obtained from tun: {:?}", err);
+            //     let result = {
+            //         let mut mmsg_buffers = bufs
+            //             .iter_mut()
+            //             .map(|b| [IoSliceMut::new(b)])
+            //             .collect::<Vec<_>>();
+            //         let mut mmsg_buffers = mmsg_buffers
+            //             .iter_mut()
+            //             .map(|b| RecvMmsgData {
+            //                 iov: b,
+            //                 cmsg_buffer: None,
+            //             })
+            //             .collect::<Vec<_>>();
+            //         let mmsg_buffers = mmsg_buffers.iter_mut().collect::<Vec<_>>();
+            //         recvmmsg::<_, SockaddrStorage>(fd, mmsg_buffers, MsgFlags::empty(), None)
+            //             .expect("recvmmsg failed")
+            //             .into_iter()
+            //             .map(|s| s.bytes)
+            //             .collect::<Vec<_>>()
+            //     };
+            //     log::debug!("tun got {} mmsg", result.len());
+            //     for (n, buf) in result.into_iter().zip(bufs.iter()) {
+            //         let pkt = &buf[..n];
+            //         let dest =
+            //             Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
+            //         if let Some(Some(dest)) = dest {
+            //             if let Err(err) = dest.try_send(pkt.into()) {
+            //                 log::trace!("error forwarding packet obtained from tun: {:?}", err);
+            //             }
             //         }
             //     }
             // }
+            loop {
+                let n = reader.read(&mut buf).expect("cannot read from tun device");
+                let pkt = &buf[..n];
+                let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
+                if let Some(Some(dest)) = dest {
+                    if let Err(err) = dest.try_send(pkt.into()) {
+                        log::trace!("error forwarding packet obtained from tun: {:?}", err);
+                    }
+                }
+            }
         })
         .unwrap()
 });
