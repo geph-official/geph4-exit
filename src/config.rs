@@ -42,6 +42,10 @@ pub struct Config {
     #[getset(get = "pub")]
     force_dns: Option<SocketAddr>,
 
+    /// If set, force-disables TCP termination. This can impact statistics gathering and performance, but may be necessary in resource-constrained environments.
+    #[getset(get = "pub")]
+    disable_tcp_termination: bool,
+
     /// A mapping between an ASN and proxy servers to redirect all port 443 TCP connections to. This must be the address of some kind of "sniproxy" instance. Generally used to specially redirect e.g. Google traffic.
     ///
     /// TODO: Will be replaced once Geph gets proper IPv6 support!

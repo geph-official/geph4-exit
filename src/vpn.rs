@@ -6,7 +6,7 @@ use futures_util::TryFutureExt;
 use libc::{c_void, fcntl, F_GETFL, F_SETFL, O_NONBLOCK, SOL_IP, SO_ORIGINAL_DST};
 
 use moka::sync::Cache;
-use nix::sys::socket::{recvmmsg, MsgFlags, RecvMmsgData, SockaddrStorage};
+
 use once_cell::sync::Lazy;
 use os_socketaddr::OsSocketAddr;
 use parking_lot::Mutex;
@@ -20,7 +20,7 @@ use sosistab::{Buff, BuffMut};
 use geph4_protocol::VpnMessage;
 use std::{
     collections::HashSet,
-    io::{IoSliceMut, Read},
+    io::{Read},
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
     os::unix::prelude::{AsRawFd, FromRawFd},

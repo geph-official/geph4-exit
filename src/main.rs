@@ -77,7 +77,11 @@ fn main() -> anyhow::Result<()> {
     }
 
     if let Some(nat_interface) = config.nat_external_iface().as_ref() {
-        config_iptables(nat_interface, *config.force_dns())?;
+        config_iptables(
+            nat_interface,
+            *config.force_dns(),
+            !config.disable_tcp_termination(),
+        )?;
     }
     let ctx: RootCtx = config.into();
     smolscale::block_on(async move {
@@ -110,7 +114,11 @@ fn main() -> anyhow::Result<()> {
 }
 
 /// Configures iptables.
-fn config_iptables(nat_interface: &str, force_dns: Option<SocketAddr>) -> anyhow::Result<()> {
+fn config_iptables(
+    nat_interface: &str,
+    force_dns: Option<SocketAddr>,
+    tcp_redirect: bool,
+) -> anyhow::Result<()> {
     let to_run = format!(
         r#"
     #!/bin/sh
@@ -119,7 +127,7 @@ export INTERFACE={}
 iptables --flush
 iptables -t nat -F
 
-iptables -t nat -A PREROUTING -i tun-geph -p tcp --syn -j REDIRECT --match multiport --dports 80,443,8080 --to-ports 10000
+{}
 {}
 
 iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE --random-fully
@@ -128,6 +136,11 @@ iptables -A FORWARD -i tun-geph -o $INTERFACE -j ACCEPT
 iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 "#,
         nat_interface,
+        if tcp_redirect {
+            "iptables -t nat -A PREROUTING -i tun-geph -p tcp --syn -j REDIRECT --match multiport --dports 80,443,8080 --to-ports 10000"
+        } else {
+            ""
+        },
         force_dns
             .map(|d| {
                 format!(
