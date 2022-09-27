@@ -229,10 +229,10 @@ static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::n
     log::info!("initializing tun-geph");
     let queue_count = std::thread::available_parallelism().unwrap().get();
     let mut dev = Device::new(
-        &tun::Configuration::default()
+        tun::Configuration::default()
             .name("tun-geph")
             .address("100.64.0.1")
-            .netmask("100.64.0.1/10")
+            .netmask("255.192.0.0")
             .up()
             .layer(tun::Layer::L3)
             .queues(queue_count),
