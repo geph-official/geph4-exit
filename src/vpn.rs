@@ -3,7 +3,7 @@ use bytes::Bytes;
 
 use cidr_utils::cidr::Ipv4Cidr;
 use futures_util::TryFutureExt;
-use libc::{c_void, fcntl, F_GETFL, F_SETFL, O_NONBLOCK, SOL_IP, SO_ORIGINAL_DST};
+use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
 
 use moka::sync::Cache;
 
@@ -20,13 +20,13 @@ use sosistab::{Buff, BuffMut};
 use geph4_protocol::VpnMessage;
 use std::{
     collections::HashSet,
-    io::{Read},
+    io::{Read, Write},
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
     os::unix::prelude::{AsRawFd, FromRawFd},
     sync::{atomic::Ordering, Arc},
 };
-use tundevice::TunDevice;
+use tun::{platform::Device, Device as Device2};
 
 use crate::{
     connect::proxy_loop,
@@ -98,7 +98,6 @@ pub async fn handle_vpn_session(
         log::warn!("disabling VPN mode since external interface is not specified!");
         return smol::future::pending().await;
     }
-    Lazy::force(&INCOMING_PKT_HANDLER);
     log::trace!("handle_vpn_session entered");
     scopeguard::defer!(log::trace!("handle_vpn_session exited"));
 
@@ -212,7 +211,7 @@ pub async fn handle_vpn_session(
                             continue;
                         }
                     }
-                    RAW_TUN.write_raw(&bts).await;
+                    RAW_TUN_WRITE(&bts);
                 }
             }
             _ => anyhow::bail!("message in invalid context"),
@@ -225,75 +224,46 @@ pub async fn handle_vpn_session(
 static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Buff>>> =
     Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
 
-/// Incoming packet handler
-static INCOMING_PKT_HANDLER: Lazy<std::thread::JoinHandle<()>> = Lazy::new(|| {
-    std::thread::Builder::new()
-        .name("tun-reader".into())
-        .spawn(|| {
-            let mut buf = [0; 2048];
-            let fd = RAW_TUN.dup_rawfd();
-            // set into BLOCKING mode
-            unsafe {
-                let mut flags = libc::fcntl(fd, F_GETFL);
-                flags &= !O_NONBLOCK;
-                fcntl(fd, F_SETFL, flags);
-            }
-            let mut reader = unsafe { std::fs::File::from_raw_fd(fd) };
-            // let mut bufs = vec![[0u8; 2048]; 128];
-            // loop {
-            //     let result = {
-            //         let mut mmsg_buffers = bufs
-            //             .iter_mut()
-            //             .map(|b| [IoSliceMut::new(b)])
-            //             .collect::<Vec<_>>();
-            //         let mut mmsg_buffers = mmsg_buffers
-            //             .iter_mut()
-            //             .map(|b| RecvMmsgData {
-            //                 iov: b,
-            //                 cmsg_buffer: None,
-            //             })
-            //             .collect::<Vec<_>>();
-            //         let mmsg_buffers = mmsg_buffers.iter_mut().collect::<Vec<_>>();
-            //         recvmmsg::<_, SockaddrStorage>(fd, mmsg_buffers, MsgFlags::empty(), None)
-            //             .expect("recvmmsg failed")
-            //             .into_iter()
-            //             .map(|s| s.bytes)
-            //             .collect::<Vec<_>>()
-            //     };
-            //     log::debug!("tun got {} mmsg", result.len());
-            //     for (n, buf) in result.into_iter().zip(bufs.iter()) {
-            //         let pkt = &buf[..n];
-            //         let dest =
-            //             Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-            //         if let Some(Some(dest)) = dest {
-            //             if let Err(err) = dest.try_send(pkt.into()) {
-            //                 log::trace!("error forwarding packet obtained from tun: {:?}", err);
-            //             }
-            //         }
-            //     }
-            // }
-            loop {
-                let n = reader.read(&mut buf).expect("cannot read from tun device");
-                let pkt = &buf[..n];
-                let dest = Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
-                if let Some(Some(dest)) = dest {
-                    if let Err(err) = dest.try_send(pkt.into()) {
-                        log::trace!("error forwarding packet obtained from tun: {:?}", err);
+/// The raw TUN device.
+static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::new(|| {
+    log::info!("initializing tun-geph");
+    let queue_count = std::thread::available_parallelism().unwrap().get();
+    let mut dev = Device::new(
+        &tun::Configuration::default()
+            .name("tun-geph")
+            .address("100.64.0.1")
+            .netmask("100.64.0.1/10")
+            .up()
+            .layer(tun::Layer::L3)
+            .queues(queue_count),
+    )
+    .unwrap();
+    // TODO: is this remotely safe??
+    for q in 0..queue_count {
+        let queue = dev.queue(q).unwrap();
+        let queue_fd = queue.as_raw_fd();
+        std::thread::Builder::new()
+            .name("tun-reader".into())
+            .spawn(move || {
+                let mut reader = unsafe { std::fs::File::from_raw_fd(queue_fd) };
+                // great now we can do our magic
+                let mut buf = [0; 2048];
+                loop {
+                    let n = reader.read(&mut buf).expect("cannot read from tun device");
+                    let pkt = &buf[..n];
+                    let dest =
+                        Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
+                    if let Some(Some(dest)) = dest {
+                        if let Err(err) = dest.try_send(pkt.into()) {
+                            log::trace!("error forwarding packet obtained from tun: {:?}", err);
+                        }
                     }
                 }
-            }
-        })
-        .unwrap()
-});
-
-/// The raw TUN device.
-static RAW_TUN: Lazy<TunDevice> = Lazy::new(|| {
-    log::info!("initializing tun-geph");
-    let dev =
-        TunDevice::new_from_os("tun-geph").expect("could not initiate 'tun-geph' tun device!");
-    dev.assign_ip("100.64.0.1/10");
-    smol::future::block_on(dev.write_raw(b"hello world"));
-    dev
+            })
+            .unwrap();
+    }
+    let dev = Mutex::new(dev);
+    Box::new(move |b| dev.lock().write_all(b).unwrap())
 });
 
 /// Global IpAddr assigner

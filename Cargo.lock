@@ -1691,7 +1691,7 @@ dependencies = [
  "structopt",
  "tap",
  "toml",
- "tundevice",
+ "tun",
  "ureq",
  "x25519-dalek",
 ]
@@ -1998,6 +1998,12 @@ checksum = "7a5bbe824c507c5da5956355e86a746d82e0e1464f65d862cc5e71da70e94b2c"
 dependencies = [
  "cfg-if 1.0.0",
 ]
+
+[[package]]
+name = "ioctl-sys"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1c429fffa658f288669529fc26565f728489a2e39bc7b24a428aaaf51355182e"
 
 [[package]]
 name = "itoa"
@@ -3816,19 +3822,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f1ee9bd9239c339d714d657fac840c6d2a4f9c45f4f9ec7b0975113458be78db"
 
 [[package]]
-name = "tundevice"
-version = "0.1.4"
+name = "tun"
+version = "0.5.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53556e5f87b5171f84a1477d2ede537fcac2f971c4fc9e3194a25c1324aeeb45"
+checksum = "9ad14dc69c82f850bc4c0dc6e7c902893b72827fb34d256fa78e81630a5da86c"
 dependencies = [
- "async-dup",
- "blocking",
- "bytes",
- "cc",
- "flume",
+ "ioctl-sys",
  "libc",
- "log",
- "smol",
+ "thiserror",
 ]
 
 [[package]]
