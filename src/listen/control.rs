@@ -73,10 +73,6 @@ pub async fn handle_control(
             // create or recall binding
             if info.is_none() {
                 let ctx = ctx.clone();
-                log::debug!(
-                    "redoing binding for {} because info is none",
-                    client.peer_addr()?
-                );
                 let mut rng = ChaCha20Rng::from_seed(
                     *blake3::keyed_hash(
                         blake3::hash(&ctx.signing_sk.to_bytes()).as_bytes(),
@@ -85,6 +81,7 @@ pub async fn handle_control(
                     .as_bytes(),
                 );
                 let sosis_secret = x25519_dalek::StaticSecret::new(&mut rng);
+                let peer_addr = client.peer_addr()?;
                 // we make TCP first since TCP ephemeral ports are a lot more scarce.
                 let mut to_repeat = || {
                     let a: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
@@ -104,6 +101,7 @@ pub async fn handle_control(
                                 &flow_key,
                             )
                             .await?;
+
                         Ok::<_, anyhow::Error>((sosis_listener_tcp, sosis_listener_udp))
                     }
                 };
@@ -115,6 +113,11 @@ pub async fn handle_control(
                 };
 
                 let (send, recv) = smol::channel::bounded(1);
+                let port = sosis_listener_udp.local_addr().port();
+                log::debug!(
+                    "redoing binding for {peer_addr} => {port} ({}) because info is none",
+                    hex::encode(&sosis_secret.to_bytes())
+                );
                 info = Some((
                     sosis_listener_udp.local_addr().port(),
                     x25519_dalek::PublicKey::from(&sosis_secret),
