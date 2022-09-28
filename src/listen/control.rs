@@ -3,6 +3,7 @@ use anyhow::Context;
 use ed25519_dalek::Signer;
 use geph4_binder_transport::BinderRequestData;
 use rand::prelude::*;
+use rand_chacha::ChaCha20Rng;
 use smol::{channel::Sender, prelude::*};
 use smol_timeout::TimeoutExt;
 
@@ -76,24 +77,35 @@ pub async fn handle_control(
                     "redoing binding for {} because info is none",
                     client.peer_addr()?
                 );
-                let sosis_secret = x25519_dalek::StaticSecret::new(&mut rand::thread_rng());
+                let mut rng = ChaCha20Rng::from_seed(
+                    *blake3::keyed_hash(
+                        blake3::hash(&ctx.signing_sk.to_bytes()).as_bytes(),
+                        flow_key.as_bytes(),
+                    )
+                    .as_bytes(),
+                );
+                let sosis_secret = x25519_dalek::StaticSecret::new(&mut rng);
                 // we make TCP first since TCP ephemeral ports are a lot more scarce.
-                let to_repeat = || async {
-                    let sosis_listener_tcp = ctx
-                        .listen_tcp(
-                            Some(sosis_secret.clone()),
-                            "[::0]:0".parse().unwrap(),
-                            &flow_key,
-                        )
-                        .await?;
-                    let sosis_listener_udp = ctx
-                        .listen_udp(
-                            Some(sosis_secret.clone()),
-                            sosis_listener_tcp.local_addr(),
-                            &flow_key,
-                        )
-                        .await?;
-                    Ok::<_, anyhow::Error>((sosis_listener_tcp, sosis_listener_udp))
+                let mut to_repeat = || {
+                    let a: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
+                        .parse()
+                        .unwrap();
+                    let ctx = ctx.clone();
+                    let sosis_secret = sosis_secret.clone();
+                    let flow_key = flow_key.clone();
+                    async move {
+                        let sosis_listener_tcp = ctx
+                            .listen_tcp(Some(sosis_secret.clone()), a, &flow_key)
+                            .await?;
+                        let sosis_listener_udp = ctx
+                            .listen_udp(
+                                Some(sosis_secret.clone()),
+                                sosis_listener_tcp.local_addr(),
+                                &flow_key,
+                            )
+                            .await?;
+                        Ok::<_, anyhow::Error>((sosis_listener_tcp, sosis_listener_udp))
+                    }
                 };
                 let (sosis_listener_tcp, sosis_listener_udp) = loop {
                     match to_repeat().await {
