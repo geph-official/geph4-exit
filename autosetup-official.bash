@@ -95,7 +95,6 @@ Restart=always
 ExecStart=/opt/geph4-exit-start
 LimitNOFILE=655360
 User=root
-Environment="SMOLSCALE_USE_AGEX=1"
 
 [Install]
 WantedBy=multi-user.target

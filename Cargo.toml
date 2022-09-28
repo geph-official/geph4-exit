@@ -22,7 +22,7 @@ bincode= "1.3.3"
 anyhow= "1.0.58"
 hex= "0.4.3"
 x25519-dalek={ version = "1.2.0", features = ["serde"] }
-sosistab= "=0.4.45"
+sosistab= "0.4.45"
 #sosistab={ path="../sosistab"}
 blake3= "1.3.1"
 serde= "1.0.137"
@@ -79,8 +79,9 @@ nix = "0.25.0"
 [profile.release]
 panic = "abort"
 opt-level=3
-debug=0
+debug=2
 # lto=false
 
 # [patch.crates-io]
 # smolscale={path="../smolscale"}
+# sosistab={path="../sosistab"}

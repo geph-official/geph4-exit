@@ -94,7 +94,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
     let sess_alive_loop = {
         let recv_sess_alive = recv_sess_alive.clone();
         let root = root.clone();
-        async move {
+        smolscale::spawn(async move {
             let alive = AtomicBool::new(false);
             let guard = scopeguard::guard(alive, |v| {
                 if v.load(Ordering::SeqCst) {
@@ -118,7 +118,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                         .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
                 }
             }
-        }
+        })
     };
 
     let proxy_loop = {
@@ -126,7 +126,7 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
         let sess = sess.clone();
         let rate_limit = rate_limit.clone();
         let send_sess_alive = send_sess_alive.clone();
-        async move {
+        smolscale::spawn(async move {
             let client_id: u64 = rand::thread_rng().gen();
             loop {
                 let mut client = sess
@@ -164,11 +164,16 @@ pub async fn handle_session(ctx: SessCtx) -> anyhow::Result<()> {
                 )
                 .detach();
             }
-        }
+        })
     };
-    let vpn_loop = handle_vpn_session(root.clone(), sess.clone(), rate_limit.clone(), || {
-        let _ = send_sess_alive.try_send(());
-    });
+    let vpn_loop = smolscale::spawn(handle_vpn_session(
+        root.clone(),
+        sess.clone(),
+        rate_limit.clone(),
+        move || {
+            let _ = send_sess_alive.try_send(());
+        },
+    ));
 
     let sess_replace_loop = async {
         loop {

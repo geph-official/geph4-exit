@@ -3341,9 +3341,9 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.3.33"
+version = "0.3.35"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61731368ac3e4397411f9b84d2d3f1983bc89881d3178dd73e1957ddf19bed26"
+checksum = "025ed76cfe271aa5fb71a1b118ddd4370f2f7a38dfffb7955fa8f39c14b5effc"
 dependencies = [
  "anyhow",
  "async-channel",
@@ -3354,8 +3354,8 @@ dependencies = [
  "async-task",
  "backtrace 0.3.66",
  "cache-padded",
- "concurrent-queue",
  "crossbeam-deque",
+ "dashmap 5.4.0",
  "event-listener",
  "fastrand",
  "flume",
@@ -3365,9 +3365,9 @@ dependencies = [
  "num_cpus",
  "once_cell",
  "pin-project-lite 0.2.9",
- "rtrb",
  "scopeguard",
  "slab",
+ "tabwriter",
  "thread_local",
 ]
 
@@ -3394,9 +3394,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.4.45"
+version = "0.4.47"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6ab0f04acd85450ba3ec3e83bfb0cd5ede342f0c65e378f2dc26c0dd8df3635"
+checksum = "3af4110f12d53449fd0e67d59157ace2d5ba30c60b7d601cd480349a54bb9bb0"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3605,6 +3605,15 @@ dependencies = [
  "quote",
  "syn",
  "unicode-xid",
+]
+
+[[package]]
+name = "tabwriter"
+version = "1.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "36205cfc997faadcc4b0b87aaef3fbedafe20d38d4959a7ca6ff803564051111"
+dependencies = [
+ "unicode-width",
 ]
 
 [[package]]
