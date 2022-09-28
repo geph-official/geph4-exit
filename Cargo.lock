@@ -2647,9 +2647,9 @@ checksum = "dbf0c48bc1d91375ae5c3cd81e3722dff1abcf81a30960240640d223f59fe0e5"
 
 [[package]]
 name = "proc-macro2"
-version = "1.0.44"
+version = "1.0.45"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7bd7356a8122b6c4a24a82b278680c73357984ca2fc79a0f9fa6dea7dced7c58"
+checksum = "3edcd08cf4fea98d1ae6c9ddd3b8ccb1acac7c3693d62625969a7daa04a2ae36"
 dependencies = [
  "unicode-ident",
 ]
@@ -3342,9 +3342,9 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.3.35"
+version = "0.3.36"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "025ed76cfe271aa5fb71a1b118ddd4370f2f7a38dfffb7955fa8f39c14b5effc"
+checksum = "555badd91ba27924ed3f3b464f2145f41a3e67d35b5ba0ba8dd9cfe3bd824c94"
 dependencies = [
  "anyhow",
  "async-channel",
