@@ -76,7 +76,7 @@ pub async fn handle_control(
                 let mut rng = ChaCha20Rng::from_seed(
                     *blake3::keyed_hash(
                         blake3::hash(&ctx.signing_sk.to_bytes()).as_bytes(),
-                        flow_key.as_bytes(),
+                        client.peer_addr()?.to_string().as_bytes(),
                     )
                     .as_bytes(),
                 );
