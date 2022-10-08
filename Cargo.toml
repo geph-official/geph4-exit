@@ -57,7 +57,7 @@ jemallocator= "0.3.2"
 futures-util= "0.3.21"
 geph4-binder-transport = "0.1.3"
 geph4-aioutils = "0.1.3"
-geph4-protocol = "0.2.0"
+geph4-protocol = "0.4.10"
 mizaru = "0.1.3"
 # tundevice = "0.1.4"
 tun="0.5.4"
@@ -75,6 +75,8 @@ cidr-utils = {version="0.5.7", features=["serde"]}
 socket2 = "0.4.7"
 byteorder = "1.4.3"
 nix = "0.25.0"
+async-trait = "0.1.57"
+smol_str = "0.1.23"
 
 [profile.release]
 panic = "abort"
@@ -82,6 +84,6 @@ opt-level=3
 debug=2
 # lto=false
 
-# [patch.crates-io]
+[patch.crates-io]
 # smolscale={path="../smolscale"}
 # sosistab={path="../sosistab"}

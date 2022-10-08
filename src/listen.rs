@@ -12,11 +12,14 @@ use event_listener::Event;
 use geph4_binder_transport::{BinderClient, HttpClient};
 
 use dashmap::DashMap;
+use geph4_protocol::bridge_exit::serve_bridge_exit;
 use jemalloc_ctl::epoch;
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
 use sosistab::Session;
 use x25519_dalek::StaticSecret;
+
+use self::control::ControlService;
 
 mod control;
 mod session;
@@ -250,12 +253,34 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     // future that governs the control protocol
     let control_prot_fut = async {
         if ctx.config.official().is_some() {
-            let control_prot_listen = smol::net::TcpListener::bind("[::0]:28080").await?;
-            loop {
-                let ctx = ctx.clone();
-                let (client, _) = control_prot_listen.accept().await?;
-                smolscale::spawn(control::handle_control(ctx, client)).detach();
+            async {
+                let control_prot_listen = smol::net::TcpListener::bind("[::0]:28080").await?;
+                loop {
+                    let ctx = ctx.clone();
+                    let (client, _) = control_prot_listen.accept().await?;
+                    smolscale::spawn(control::handle_legacy_control(ctx, client)).detach();
+                }
             }
+            .race(async {
+                let ctx = ctx.clone();
+                let secret = blake3::hash(
+                    ctx.config
+                        .official()
+                        .as_ref()
+                        .unwrap()
+                        .bridge_secret()
+                        .as_bytes(),
+                );
+                let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await?;
+                serve_bridge_exit(
+                    socket,
+                    *secret.as_bytes(),
+                    geph4_protocol::bridge_exit::BridgeExitService(ControlService::new(ctx)),
+                )
+                .await?;
+                Ok(())
+            })
+            .await
         } else {
             smol::future::pending().await
         }
