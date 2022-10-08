@@ -271,8 +271,8 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                         .bridge_secret()
                         .as_bytes(),
                 );
-                let socket = smol::net::UdpSocket::bind("[::0]:28080").await?;
-                serve_bridge_exit::<geph4_protocol::bridge_exit::BridgeExitService<ControlService>>(
+                let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await?;
+                serve_bridge_exit(
                     socket,
                     *secret.as_bytes(),
                     geph4_protocol::bridge_exit::BridgeExitService(ControlService::new(ctx)),

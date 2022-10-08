@@ -151,7 +151,13 @@ impl BridgeExitProtocol for ControlService {
                             sosistab_pubkey: sosistab_pk,
                             bridge_address: bridge_addr,
                             bridge_group: bridge_group.clone().into(),
-                            exit_hostname: ctx.exit_hostname(),
+                            exit_hostname: ctx
+                                .config
+                                .official()
+                                .as_ref()
+                                .unwrap()
+                                .exit_hostname()
+                                .to_string(),
                             route_unixtime,
                             exit_signature,
                         })
