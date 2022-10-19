@@ -3664,9 +3664,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.86"
+version = "1.0.87"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41feea4228a6f1cd09ec7a3593a682276702cd67b5273544757dae23c096f074"
+checksum = "6ce777b7b150d76b9cf60d28b55f5847135a003f7d7350c6be7a773508ce7d45"
 dependencies = [
  "itoa",
  "ryu",
@@ -3935,9 +3935,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.4.51"
+version = "0.4.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9a2d35d9ff21e123a258e3dfc8cfcc3809512ac9c71ede58202566d1d9304d28"
+checksum = "449a676e5cb6b125a7b92a5f7df5731a58c06074bc7ca9afa5ddcd976ad1b912"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -3965,6 +3965,7 @@ dependencies = [
  "hex",
  "im",
  "indexmap",
+ "moka",
  "nix 0.23.1",
  "nonzero_ext 0.3.0",
  "num_cpus",
