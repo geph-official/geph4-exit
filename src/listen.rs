@@ -13,10 +13,11 @@ use geph4_binder_transport::{BinderClient, HttpClient};
 
 use dashmap::DashMap;
 use geph4_protocol::bridge_exit::serve_bridge_exit;
-use jemalloc_ctl::epoch;
+
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
 use sosistab::Session;
+use sysinfo::{System, SystemExt};
 use x25519_dalek::StaticSecret;
 
 use self::control::ControlService;
@@ -321,11 +322,10 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let ctrlkey = format!("control_count.{}", exit_hostname.replace('.', "-"));
         let taskkey = format!("task_count.{}", exit_hostname.replace('.', "-"));
         let hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
-        let e = epoch::mib().unwrap();
-        // let allocated = jemalloc_ctl::stats::allocated::mib().unwrap();
-        let resident = jemalloc_ctl::stats::allocated::mib().unwrap();
+        let mut sys = System::new_all();
+
         loop {
-            e.advance().unwrap();
+            sys.refresh_all();
             if let Some(stat_client) = ctx.stat_client.as_ref() {
                 let session_count = ctx.session_count.load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&key, session_count as f64);
@@ -333,7 +333,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .raw_session_count
                     .load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&rskey, raw_session_count as f64);
-                let memory_usage = resident.read().unwrap();
+                let memory_usage = sys.used_memory();
                 stat_client.gauge(&memkey, memory_usage as f64);
                 let conn_count = ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&connkey, conn_count as f64);
