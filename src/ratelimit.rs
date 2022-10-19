@@ -35,12 +35,14 @@ impl RateLimiter {
     /// Creates a new rate limiter with the given speed limit, in KB/s
     pub fn new(l: u32) -> Self {
         let limit = NonZeroU32::new(l * 1024).unwrap();
-        // huge buffer for better experience loading bursty traffic
+        let burst_size = NonZeroU32::new(l * 1024 * 120).unwrap();
+        // huge, 120-second buffer for better experience loading bursty traffic
         let inner = governor::RateLimiter::new(
-            Quota::per_second(limit).allow_burst(NonZeroU32::new(2_000_000).unwrap()),
+            Quota::per_second(limit).allow_burst(burst_size),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
         );
+        inner.check_n(burst_size).expect("this should never happen");
         Self {
             inner,
             unlimited: false,
