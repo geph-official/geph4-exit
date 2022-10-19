@@ -333,7 +333,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .raw_session_count
                     .load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&rskey, raw_session_count as f64);
-                let memory_usage = sys.used_memory();
+                let memory_usage = sys.total_memory() - sys.available_memory();
                 stat_client.gauge(&memkey, memory_usage as f64);
                 let conn_count = ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&connkey, conn_count as f64);
