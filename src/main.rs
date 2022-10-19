@@ -9,7 +9,6 @@ use config::Config;
 use env_logger::Env;
 
 use flate2::{write::GzEncoder, Compression};
-use mimalloc::MiMalloc;
 
 use smol::process::Command;
 use structopt::StructOpt;
@@ -30,8 +29,8 @@ struct Opt {
     /// Path to configuration file. Can be a HTTP URL!
     config: String,
 }
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+// #[global_allocator]
+// static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() -> anyhow::Result<()> {
     if std::env::var("GEPH_SINGLETHREADED").is_ok() {
