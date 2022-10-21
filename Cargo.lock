@@ -899,15 +899,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cloudabi"
-version = "0.0.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfc5b9aa5d4507acaf872de71051dfd0e309860e88966e1051e462a077aac4f"
-dependencies = [
- "bitflags",
-]
-
-[[package]]
 name = "codespan-reporting"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1452,15 +1443,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "eff-wordlist"
-version = "1.0.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "226cc2588a6b769f444d06dedd29a366ea92469edea1cef7873fbd76e5b34c24"
-dependencies = [
- "rand 0.6.5",
-]
-
-[[package]]
 name = "either"
 version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1545,19 +1527,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a7a407cfaa3385c4ae6b23e84623d48c2798d06e3e6a1878f7f59f17b3f86499"
 dependencies = [
  "instant",
-]
-
-[[package]]
-name = "fastudp"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "291435418502381564a0c3a6dac077c5f51cb742dddeb7871f4d45fabe9b2069"
-dependencies = [
- "async-channel",
- "concurrent-queue",
- "env_logger 0.9.1",
- "log",
- "nix 0.25.0",
 ]
 
 [[package]]
@@ -1883,7 +1852,7 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.7",
- "sosistab 0.5.6",
+ "sosistab",
  "statsd",
  "structopt",
  "sysinfo",
@@ -1937,7 +1906,7 @@ dependencies = [
  "smol-timeout",
  "smol_str",
  "smolscale",
- "sosistab 0.4.52",
+ "sosistab",
  "stdcode",
  "strsim 0.10.0",
  "tap",
@@ -3202,25 +3171,6 @@ dependencies = [
 
 [[package]]
 name = "rand"
-version = "0.6.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d71dacdc3c88c1fde3885a3be3fbab9f35724e6ce99467f7d9c5026132184ca"
-dependencies = [
- "autocfg 0.1.8",
- "libc",
- "rand_chacha 0.1.1",
- "rand_core 0.4.2",
- "rand_hc 0.1.0",
- "rand_isaac",
- "rand_jitter",
- "rand_os",
- "rand_pcg",
- "rand_xorshift",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "rand"
 version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6a6b1679d49b24bbfe0c803429aa1874472f50d9b363131f0e89fc356b544d03"
@@ -3229,7 +3179,7 @@ dependencies = [
  "libc",
  "rand_chacha 0.2.2",
  "rand_core 0.5.1",
- "rand_hc 0.2.0",
+ "rand_hc",
 ]
 
 [[package]]
@@ -3241,16 +3191,6 @@ dependencies = [
  "libc",
  "rand_chacha 0.3.1",
  "rand_core 0.6.4",
-]
-
-[[package]]
-name = "rand_chacha"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "556d3a1ca6600bfcbab7c7c91ccb085ac7fbbcd70e008a98742e7847f4f7bcef"
-dependencies = [
- "autocfg 0.1.8",
- "rand_core 0.3.1",
 ]
 
 [[package]]
@@ -3308,73 +3248,11 @@ dependencies = [
 
 [[package]]
 name = "rand_hc"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b40677c7be09ae76218dc623efbf7b18e34bced3f38883af07bb75630a21bc4"
-dependencies = [
- "rand_core 0.3.1",
-]
-
-[[package]]
-name = "rand_hc"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
 dependencies = [
  "rand_core 0.5.1",
-]
-
-[[package]]
-name = "rand_isaac"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ded997c9d5f13925be2a6fd7e66bf1872597f759fd9dd93513dd7e92e5a5ee08"
-dependencies = [
- "rand_core 0.3.1",
-]
-
-[[package]]
-name = "rand_jitter"
-version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1166d5c91dc97b88d1decc3285bb0a99ed84b05cfd0bc2341bdf2d43fc41e39b"
-dependencies = [
- "libc",
- "rand_core 0.4.2",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "rand_os"
-version = "0.1.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b75f676a1e053fc562eafbb47838d67c84801e38fc1ba459e8f180deabd5071"
-dependencies = [
- "cloudabi",
- "fuchsia-cprng",
- "libc",
- "rand_core 0.4.2",
- "rdrand",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "rand_pcg"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "abf9b09b01790cfe0364f52bf32995ea3c39f4d2dd011eac241d2914146d0b44"
-dependencies = [
- "autocfg 0.1.8",
- "rand_core 0.4.2",
-]
-
-[[package]]
-name = "rand_xorshift"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cbf7e9e623549b0e21f6e97cf8ecf247c1a8fd2e8a992ae265314300b2455d5c"
-dependencies = [
- "rand_core 0.3.1",
 ]
 
 [[package]]
@@ -4088,70 +3966,6 @@ dependencies = [
  "im",
  "indexmap",
  "moka",
- "nix 0.23.1",
- "nonzero_ext 0.3.0",
- "num_cpus",
- "once_cell",
- "ordered-float",
- "parking_lot 0.11.2",
- "priority-queue",
- "probability",
- "rand 0.7.3",
- "rand_chacha 0.2.2",
- "reed-solomon-erasure",
- "ring",
- "rustc-hash",
- "scopeguard",
- "serde",
- "serde_bytes",
- "serde_json",
- "slab",
- "smallvec",
- "smol",
- "smol-timeout",
- "smolscale",
- "socket2 0.3.19",
- "thiserror",
- "tracing",
- "x25519-dalek",
-]
-
-[[package]]
-name = "sosistab"
-version = "0.5.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67934bbf05ab083ea458ca2e6f144e5f60f30d89febdb310ef6ebbdad5d0a988"
-dependencies = [
- "anyhow",
- "arc-swap",
- "argh",
- "arraymap",
- "arrayvec 0.7.2",
- "async-dup",
- "async-native-tls",
- "async-trait",
- "bincode",
- "bipe",
- "blake3 0.3.8",
- "bloomfilter",
- "c2-chacha",
- "cached 0.26.2",
- "concurrent-queue",
- "constant_time_eq",
- "dashmap 5.4.0",
- "dhat",
- "eff-wordlist",
- "env_logger 0.9.1",
- "event-listener",
- "fastrand",
- "fastudp",
- "futures-intrusive",
- "futures-util",
- "hex",
- "im",
- "indexmap",
- "moka",
- "native-tls",
  "nix 0.23.1",
  "nonzero_ext 0.3.0",
  "num_cpus",
