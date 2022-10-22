@@ -10,6 +10,7 @@ use env_logger::Env;
 
 use flate2::{write::GzEncoder, Compression};
 
+use mimalloc::MiMalloc;
 use smol::process::Command;
 use structopt::StructOpt;
 
