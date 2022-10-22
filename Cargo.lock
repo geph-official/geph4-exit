@@ -1884,7 +1884,7 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.7",
- "sosistab 0.5.8",
+ "sosistab 0.5.9",
  "statsd",
  "structopt",
  "sysinfo",
@@ -4119,9 +4119,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.5.8"
+version = "0.5.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5f3ee68052415812c228abb519d4d2cda179803782276dd6660a4295d9b7c1d"
+checksum = "f3d4104c03bbb93461335beb6b4bd75bb2915d67d3cdb9e5db30fb85116211a2"
 dependencies = [
  "anyhow",
  "arc-swap",

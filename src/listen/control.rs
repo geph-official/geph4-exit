@@ -9,9 +9,8 @@ use geph4_protocol::bridge_exit::{BridgeExitProtocol, RawProtocol};
 use moka::sync::Cache;
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
-use smol::{prelude::*};
+use smol::prelude::*;
 use smol_str::SmolStr;
-
 
 use std::{
     convert::Infallible,
@@ -36,7 +35,7 @@ impl ControlService {
         Self {
             ctx,
             bridge_to_manager: Cache::builder()
-                .time_to_idle(Duration::from_secs(30))
+                .time_to_idle(Duration::from_secs(120))
                 .build(),
         }
     }

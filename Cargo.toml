@@ -78,7 +78,7 @@ async-trait = "0.1.58"
 smol_str = "0.1.23"
 sysinfo = "0.26.5"
 
-mimalloc = { version = "0.1.30", default-features = false }
+mimalloc = { version = "0.1.30"}
 
 [profile.release]
 panic = "abort"
