@@ -1549,14 +1549,13 @@ dependencies = [
 
 [[package]]
 name = "fastudp"
-version = "0.1.2"
+version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "10e10decea0213e45a80c01922c5f153af1ddda5e9004e9aac48a3350f6bf3f2"
+checksum = "1a186ba9f3567dc844280b5433657ba86e8a41885ba7eec0790132da49e5cb9c"
 dependencies = [
  "async-channel",
  "concurrent-queue",
  "env_logger 0.9.1",
- "flume",
  "libc",
  "log",
  "nix 0.25.0",
@@ -1885,7 +1884,7 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.7",
- "sosistab 0.5.6",
+ "sosistab 0.5.7",
  "statsd",
  "structopt",
  "sysinfo",
@@ -2829,9 +2828,9 @@ dependencies = [
 
 [[package]]
 name = "openssl-sys"
-version = "0.9.76"
+version = "0.9.77"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5230151e44c0f05157effb743e8d517472843121cf9243e8b81393edb5acd9ce"
+checksum = "b03b84c3b2d099b81f0953422b4d4ad58761589d0229b5506356afca05a3670a"
 dependencies = [
  "autocfg 1.1.0",
  "cc",
@@ -4120,9 +4119,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.5.6"
+version = "0.5.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67934bbf05ab083ea458ca2e6f144e5f60f30d89febdb310ef6ebbdad5d0a988"
+checksum = "935ca0b5bf0f2685efb0cff1634f97aae3b4ecc74e8fd3b512c3b0a949d9ba62"
 dependencies = [
  "anyhow",
  "arc-swap",
