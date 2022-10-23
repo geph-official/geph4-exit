@@ -1884,7 +1884,7 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.7",
- "sosistab 0.5.11",
+ "sosistab 0.5.12",
  "statsd",
  "structopt",
  "sysinfo",
@@ -3015,9 +3015,9 @@ dependencies = [
 
 [[package]]
 name = "polling"
-version = "2.3.0"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "899b00b9c8ab553c743b3e11e87c5c7d423b2a2de229ba95b24a756344748011"
+checksum = "ab4609a838d88b73d8238967b60dd115cc08d38e2bbaf51ee1e4b695f89122e2"
 dependencies = [
  "autocfg 1.1.0",
  "cfg-if 1.0.0",
@@ -4119,9 +4119,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.5.11"
+version = "0.5.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "097f0962c9008fed9e4a613e8d635d2ad74e35e8a3868ea18b69b00b52b96638"
+checksum = "77c92496e93de16f935455a08331c8a387d31144759996022a0789d5607ca92f"
 dependencies = [
  "anyhow",
  "arc-swap",
