@@ -1549,9 +1549,9 @@ dependencies = [
 
 [[package]]
 name = "fastudp"
-version = "0.1.5"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3e7887bbd3bea2779008c380782fb0ff61a8f5cd821486b11e93563f14149790"
+checksum = "aa659ff329a6e36791c05abd534c5d1efd5ea8799b0d1bc64622a7abff37baf0"
 dependencies = [
  "async-channel",
  "concurrent-queue",
