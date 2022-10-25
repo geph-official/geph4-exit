@@ -186,9 +186,9 @@ pub async fn handle_session(ctx: SessCtx) {
             }
         };
 
-        Ok(((proxy_loop.or(sess_alive_loop)).race(vpn_loop))
+        ((proxy_loop.or(sess_alive_loop)).race(vpn_loop))
             .or(sess_replace_loop)
-            .await)
+            .await
     };
     if let Err(err) = fallible.await {
         log::warn!("session exited with: {:?}", err)
