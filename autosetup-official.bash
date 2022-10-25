@@ -61,7 +61,7 @@ net.ipv4.tcp_reordering=100
 net.ipv4.tcp_max_reordering=10000
 net.core.somaxconn = 6553600
 net.ipv4.tcp_mem = 786432 1048576 26777216
-
+net.ipv4.udp_mem = 786432 1048576 26777216
 net.ipv6.ip_nonlocal_bind=1
 net.ipv4.conf.all.route_localnet=1
 EOF
@@ -80,6 +80,7 @@ rustup update
 cd /opt/geph4-exit
 git pull
 cargo install --path . --locked
+export SOSISTAB_NO_OOB=1
 geph4-exit --config /etc/geph4-exit.toml
 EOF
 
