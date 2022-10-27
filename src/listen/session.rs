@@ -30,26 +30,26 @@ pub async fn handle_session(ctx: SessCtx) {
         });
 
         // attempt to switch sess
-        let first_pkt = sess
-            .recv_bytes()
-            .timeout(Duration::from_secs(300))
-            .await
-            .ok_or_else(|| anyhow::anyhow!("first packet timeout"))?
-            .context("first packet failed")?;
-        if first_pkt.len() != 32 {
-        } else {
-            let first_pkt: [u8; 32] = first_pkt.to_vec().try_into().unwrap();
-            log::debug!("first_pkt: {:?}", first_pkt);
-            if first_pkt != [0; 32] {
-                // This means we are supposed to hijack!
-                let to_hijack = root
-                    .sess_replacers
-                    .get(&first_pkt)
-                    .ok_or_else(|| anyhow::anyhow!("could not hijack"))?;
-                to_hijack.try_send(sess)?;
-                return Ok(());
-            }
-        }
+        // let first_pkt = sess
+        //     .recv_bytes()
+        //     .timeout(Duration::from_secs(300))
+        //     .await
+        //     .ok_or_else(|| anyhow::anyhow!("first packet timeout"))?
+        //     .context("first packet failed")?;
+        // if first_pkt.len() != 32 {
+        // } else {
+        //     let first_pkt: [u8; 32] = first_pkt.to_vec().try_into().unwrap();
+        //     log::debug!("first_pkt: {:?}", first_pkt);
+        //     if first_pkt != [0; 32] {
+        //         // This means we are supposed to hijack!
+        //         let to_hijack = root
+        //             .sess_replacers
+        //             .get(&first_pkt)
+        //             .ok_or_else(|| anyhow::anyhow!("could not hijack"))?;
+        //         to_hijack.try_send(sess)?;
+        //         return Ok(());
+        //     }
+        // }
 
         let sess = Arc::new(sosistab::Multiplex::new(sess));
         let is_plus = if let Some(binder_client) = root.binder_client.as_ref() {
