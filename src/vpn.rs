@@ -98,7 +98,7 @@ pub async fn handle_vpn_session(
         log::warn!("disabling VPN mode since external interface is not specified!");
         return smol::future::pending().await;
     }
-    log::trace!("handle_vpn_session entered");
+    log::debug!("handle_vpn_session entered");
     scopeguard::defer!(log::trace!("handle_vpn_session exited"));
 
     // set up IP address allocation
