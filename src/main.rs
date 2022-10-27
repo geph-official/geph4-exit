@@ -30,8 +30,8 @@ struct Opt {
     /// Path to configuration file. Can be a HTTP URL!
     config: String,
 }
-#[global_allocator]
-static GLOBAL: MiMalloc = MiMalloc;
+// #[global_allocator]
+// static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() -> anyhow::Result<()> {
     std::env::set_var("SOSISTAB_NO_OOB", "1");
