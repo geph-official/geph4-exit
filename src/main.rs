@@ -35,6 +35,7 @@ static GLOBAL: MiMalloc = MiMalloc;
 
 fn main() -> anyhow::Result<()> {
     std::env::set_var("SOSISTAB_NO_OOB", "1");
+    std::env::set_var("SOSISTAB_UNFAIR_CC", "1");
     if std::env::var("GEPH_SINGLETHREADED").is_ok() {
         smolscale::permanently_single_threaded();
     }
