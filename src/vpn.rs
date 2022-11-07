@@ -265,7 +265,11 @@ static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::n
             .unwrap();
     }
     let dev = Mutex::new(dev);
-    Box::new(move |b| dev.lock().write_all(b).unwrap())
+    Box::new(move |b| {
+        if let Err(err) = dev.lock().write_all(b) {
+            log::error!("cannot write to TUN: {:?}", err)
+        }
+    })
 });
 
 /// Global IpAddr assigner
