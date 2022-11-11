@@ -102,7 +102,7 @@ pub async fn proxy_loop(
 
         // Obtain ASN
         let asn = crate::asn::get_asn(addr.ip());
-        log::debug!(
+        log::trace!(
             "got connection request to {} of AS{} (conn_count = {})",
             ctx.config.redact(addr),
             ctx.config.redact(asn),
