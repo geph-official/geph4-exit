@@ -155,7 +155,6 @@ pub async fn handle_vpn_session(
         let msg: VpnMessage = bincode::deserialize(&bts)?;
         match msg {
             VpnMessage::ClientHello { .. } => {
-                eprintln!("CLIENT HELLO");
                 mux.send_urel(
                     bincode::serialize(&VpnMessage::ServerHello {
                         client_ip: *assigned_ip.clone(),
