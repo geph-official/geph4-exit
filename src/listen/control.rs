@@ -166,7 +166,7 @@ impl BridgeExitProtocol for ControlService {
                         log::warn!("{:?}", err);
                         smol::Timer::after(Duration::from_secs(1)).await;
                     }
-                    smol::Timer::after(Duration::from_secs(10)).await;
+                    smol::Timer::after(Duration::from_secs(60)).await;
                 }
             }));
             // Right now, all we do is TCP and UDP, somewhat unfortunately, due to the old binder schema.
