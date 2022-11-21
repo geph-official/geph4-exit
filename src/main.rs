@@ -134,7 +134,7 @@ iptables -t nat -F
 iptables -t nat -A POSTROUTING -o $INTERFACE -j MASQUERADE --random-fully
 iptables -A FORWARD -i $INTERFACE -o tun-geph -m state --state RELATED,ESTABLISHED -j ACCEPT
 iptables -A FORWARD -i tun-geph -o $INTERFACE -j ACCEPT
-iptables -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
+iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --set-mss 1240
 "#,
         nat_interface,
         if tcp_redirect {
