@@ -89,3 +89,4 @@ debug=2
 [patch.crates-io]
 # smolscale={path="../smolscale"}
 # sosistab={path="../sosistab"}
+microsleep={git="https://github.com/nullchinchilla/microsleep"}
