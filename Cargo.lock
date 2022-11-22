@@ -1374,16 +1374,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "diatomic-waker"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28025fb55a9d815acf7b0877555f437254f373036eec6ed265116c7a5c0825e9"
-dependencies = [
- "loom",
- "waker-fn",
-]
-
-[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1735,17 +1725,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "futures-intrusive"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d930c203dd0b6ff06e0201a4a2fe9149b43c684fd4420555b26d21b1a02956f"
-dependencies = [
- "futures-core",
- "lock_api",
- "parking_lot 0.12.1",
-]
-
-[[package]]
 name = "futures-io"
 version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1944,7 +1923,7 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.7",
- "sosistab 0.5.36",
+ "sosistab 0.5.37",
  "statsd",
  "structopt",
  "sysinfo",
@@ -2581,21 +2560,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
 dependencies = [
  "autocfg 1.1.0",
-]
-
-[[package]]
-name = "microsleep"
-version = "0.1.12"
-source = "git+https://github.com/nullchinchilla/microsleep#8ef2aa02f9ea27b164f63f09cdc550e6d0cb2c9f"
-dependencies = [
- "diatomic-waker",
- "futures-intrusive 0.5.0",
- "futures-lite",
- "once_cell",
- "parking_lot 0.12.1",
- "priority-queue",
- "smallvec",
- "spin_sleep",
 ]
 
 [[package]]
@@ -4243,7 +4207,7 @@ dependencies = [
  "event-listener",
  "fastrand",
  "flume",
- "futures-intrusive 0.4.2",
+ "futures-intrusive",
  "futures-lite",
  "log",
  "num_cpus",
@@ -4308,7 +4272,7 @@ dependencies = [
  "env_logger 0.9.3",
  "event-listener",
  "fastrand",
- "futures-intrusive 0.4.2",
+ "futures-intrusive",
  "futures-util",
  "hex",
  "im",
@@ -4344,9 +4308,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.5.36"
+version = "0.5.37"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74ec94b35313abaea02d4cff1fcfd2aa1226507398e0d6a82a7da28a4571c8bb"
+checksum = "83d6f49137c29387bc606b284dcf4651b7044a3480ab54c8942ddd0567e62e7b"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4372,12 +4336,11 @@ dependencies = [
  "event-listener",
  "fastrand",
  "fastudp",
- "futures-intrusive 0.4.2",
+ "futures-intrusive",
  "futures-util",
  "hex",
  "im",
  "indexmap",
- "microsleep",
  "moka",
  "native-tls",
  "nix 0.23.1",
@@ -4431,16 +4394,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f6002a767bff9e83f8eeecf883ecb8011875a21ae8da43bffb817a57e78cc09"
 dependencies = [
  "lock_api",
-]
-
-[[package]]
-name = "spin_sleep"
-version = "1.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cafa7900db085f4354dbc7025e25d7a839a14360ea13b5fc4fd717f2d3b23134"
-dependencies = [
- "once_cell",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -5485,3 +5438,8 @@ dependencies = [
  "syn",
  "synstructure",
 ]
+
+[[patch.unused]]
+name = "microsleep"
+version = "0.1.12"
+source = "git+https://github.com/nullchinchilla/microsleep#8ef2aa02f9ea27b164f63f09cdc550e6d0cb2c9f"
