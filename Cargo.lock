@@ -2585,9 +2585,9 @@ dependencies = [
 
 [[package]]
 name = "microsleep"
-version = "0.1.8"
+version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74b8510963047f86f980bea72ad34dcaf0fe04c933b8674adb72c19f370b1442"
+checksum = "d3e204a8669d6648d0610e458069fe1092b8da2115065f9efe996e8020dcedb2"
 dependencies = [
  "diatomic-waker",
  "futures-intrusive 0.5.0",
