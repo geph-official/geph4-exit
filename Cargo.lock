@@ -2585,11 +2585,12 @@ dependencies = [
 
 [[package]]
 name = "microsleep"
-version = "0.1.11"
-source = "git+https://github.com/nullchinchilla/microsleep#f83d93409b728c1a650c0b29cb57c9a145566d50"
+version = "0.1.12"
+source = "git+https://github.com/nullchinchilla/microsleep#8ef2aa02f9ea27b164f63f09cdc550e6d0cb2c9f"
 dependencies = [
  "diatomic-waker",
  "futures-intrusive 0.5.0",
+ "futures-lite",
  "once_cell",
  "parking_lot 0.12.1",
  "priority-queue",
