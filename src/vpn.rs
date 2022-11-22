@@ -263,11 +263,16 @@ static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::n
             })
             .unwrap();
     }
-    let dev = Mutex::new(dev);
+    let (send, recv) = smol::channel::bounded::<Vec<u8>>(10000);
+    std::thread::Builder::new()
+        .name("tun-writer".into())
+        .spawn(move || loop {
+            let v = recv.recv_blocking().unwrap();
+            let _ = dev.write_all(&v);
+        })
+        .unwrap();
     Box::new(move |b| {
-        if let Err(err) = dev.lock().write_all(b) {
-            log::error!("cannot write to TUN: {:?}", err)
-        }
+        let _ = send.try_send(b.to_vec());
     })
 });
 
