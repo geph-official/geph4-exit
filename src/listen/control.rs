@@ -69,7 +69,7 @@ impl BridgeExitProtocol for ControlService {
             let mut rng = ChaCha20Rng::from_seed(
                 *blake3::keyed_hash(
                     blake3::hash(&self.ctx.signing_sk.to_bytes()).as_bytes(),
-                    bridge_addr.ip().to_string().as_bytes(),
+                    bridge_addr.to_string().as_bytes(),
                 )
                 .as_bytes(),
             );

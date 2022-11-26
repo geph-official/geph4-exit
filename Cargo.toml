@@ -85,8 +85,3 @@ panic = "abort"
 opt-level=3
 debug=2
 # lto=false
-
-[patch.crates-io]
-# smolscale={path="../smolscale"}
-# sosistab={path="../sosistab"}
-microsleep={git="https://github.com/nullchinchilla/microsleep"}
