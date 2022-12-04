@@ -105,7 +105,7 @@ fn main() -> anyhow::Result<()> {
                     .arg("local")
                     .arg(format!("{}", range))
                     .arg("dev")
-                    .arg(&iface)
+                    .arg(iface)
                     .spawn()?
                     .output()
                     .await?;

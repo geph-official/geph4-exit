@@ -9,10 +9,12 @@ use std::{
 
 use crate::{asn::MY_PUBLIC_IP, config::Config, ratelimit::STAT_LIMITER, vpn};
 use event_listener::Event;
-use geph4_binder_transport::{BinderClient, HttpClient};
 
 use dashmap::DashMap;
-use geph4_protocol::bridge_exit::serve_bridge_exit;
+use geph4_protocol::{
+    binder::{client::E2eeHttpTransport, protocol::BinderClient},
+    bridge_exit::serve_bridge_exit,
+};
 
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
@@ -29,7 +31,7 @@ pub struct RootCtx {
     pub config: Config,
     pub stat_client: Option<Arc<statsd::Client>>,
     // pub exit_hostname: String,
-    binder_client: Option<Arc<dyn BinderClient>>,
+    binder_client: Option<Arc<BinderClient>>,
     // bridge_secret: String,
     signing_sk: ed25519_dalek::Keypair,
     sosistab_sk: x25519_dalek::StaticSecret,
@@ -82,16 +84,16 @@ impl From<Config> for RootCtx {
                 Arc::new(statsd::Client::new(official.statsd_addr(), "geph4").unwrap())
             }),
             binder_client: cfg.official().as_ref().map(|official| {
-                let bclient: Arc<dyn BinderClient> = Arc::new(HttpClient::new(
-                    bincode::deserialize(
-                        &hex::decode(official.binder_master_pk())
-                            .expect("invalid hex in binder pk"),
-                    )
-                    .expect("invalid format of master binder pk"),
-                    official.binder_http(),
-                    &[],
-                    None,
-                ));
+                let bclient: Arc<BinderClient> =
+                    Arc::new(BinderClient::from(E2eeHttpTransport::new(
+                        bincode::deserialize(
+                            &hex::decode(official.binder_master_pk())
+                                .expect("invalid hex in binder pk"),
+                        )
+                        .expect("invalid format of master binder pk"),
+                        official.binder_http().clone(),
+                        vec![],
+                    )));
                 bclient
             }),
             signing_sk,

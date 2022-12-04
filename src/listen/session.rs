@@ -6,9 +6,8 @@ use std::{
 use super::SessCtx;
 use crate::{connect::proxy_loop, ratelimit::RateLimiter, vpn::handle_vpn_session};
 
-use geph4_binder_transport::{BinderClient, BinderRequestData, BinderResponse};
-
 use futures_util::TryFutureExt;
+use geph4_protocol::binder::protocol::{BinderClient, BlindToken, Level};
 use rand::Rng;
 use smol::prelude::*;
 use smol_timeout::TimeoutExt;
@@ -174,7 +173,7 @@ pub async fn handle_session(ctx: SessCtx) {
 
 /// Authenticates a session.
 async fn authenticate_sess(
-    binder_client: Arc<dyn BinderClient>,
+    binder_client: Arc<BinderClient>,
     sess: &sosistab::Multiplex,
 ) -> anyhow::Result<bool> {
     let mut stream = sess.accept_conn().await?;
@@ -187,15 +186,22 @@ async fn authenticate_sess(
     }
     let is_plus = level != "free";
     // validate it through the binder
-    let res = binder_client
-        .request(BinderRequestData::Validate {
-            level: level.clone(),
-            unblinded_digest: auth_tok,
-            unblinded_signature: auth_sig,
+    let validated = binder_client
+        .validate(BlindToken {
+            level: if level == "free" {
+                Level::Free
+            } else {
+                Level::Plus
+            },
+            unblinded_digest: auth_tok.into(),
+            unblinded_signature_bincode: bincode::serialize(&auth_sig)?.into(),
         })
         .await?;
-    if res != BinderResponse::ValidateResp(true) {
-        anyhow::bail!("unexpected authentication response from binder: {:?}", res)
+    if !validated {
+        anyhow::bail!(
+            "unexpected authentication response from binder: {:?}",
+            validated
+        )
     }
     // send response
     geph4_aioutils::write_pascalish(&mut stream, &1u8).await?;

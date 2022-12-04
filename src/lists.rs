@@ -17,7 +17,7 @@ pub static WHITE_PORTS: Lazy<FxHashSet<u16>> = Lazy::new(|| {
     .collect();
     // steam
     toret.extend(27000..=27100);
-    toret.extend(&[3748, 4379, 4380]);
+    toret.extend([3748, 4379, 4380]);
     // mosh
     toret.extend(60000..=61000);
     toret.into_iter().collect()

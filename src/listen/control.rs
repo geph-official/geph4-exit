@@ -1,11 +1,15 @@
 use crate::asn::MY_PUBLIC_IP;
 
 use super::{session, RootCtx};
-use anyhow::Context;
+
 use async_trait::async_trait;
+use bytes::Bytes;
 use ed25519_dalek::Signer;
-use geph4_binder_transport::BinderRequestData;
-use geph4_protocol::bridge_exit::{BridgeExitProtocol, RawProtocol};
+
+use geph4_protocol::{
+    binder::protocol::BridgeDescriptor,
+    bridge_exit::{BridgeExitProtocol, RawProtocol},
+};
 use moka::sync::Cache;
 use rand::prelude::*;
 use rand_chacha::ChaCha20Rng;
@@ -134,34 +138,39 @@ impl BridgeExitProtocol for ControlService {
                         .duration_since(std::time::UNIX_EPOCH)
                         .unwrap()
                         .as_secs();
-                    let to_sign = bincode::serialize(&(
-                        sosistab_pk,
-                        bridge_addr,
-                        bridge_group.clone(),
-                        route_unixtime,
-                    ))
-                    .unwrap();
-                    let exit_signature = ctx.signing_sk.sign(&to_sign);
-                    while let Err(err) = ctx
-                        .binder_client
-                        .as_ref()
-                        .unwrap()
-                        .request(BinderRequestData::AddBridgeRoute {
-                            sosistab_pubkey: sosistab_pk,
-                            bridge_address: bridge_addr,
-                            bridge_group: bridge_group.clone().into(),
+                    let bridge_descriptor = {
+                        let mut unsigned = BridgeDescriptor {
+                            is_direct: false,
+                            protocol: "sosistab".into(),
+                            endpoint: bridge_addr,
+                            sosistab_key: sosistab_pk,
                             exit_hostname: ctx
                                 .config
                                 .official()
                                 .as_ref()
                                 .unwrap()
                                 .exit_hostname()
-                                .to_string(),
-                            route_unixtime,
-                            exit_signature,
-                        })
+                                .into(),
+                            alloc_group: bridge_group.clone(),
+                            update_time: route_unixtime,
+                            exit_signature: Bytes::new(),
+                        };
+                        let signature = ctx
+                            .signing_sk
+                            .sign(&stdcode::serialize(&unsigned).unwrap())
+                            .to_bytes()
+                            .to_vec()
+                            .into();
+                        unsigned.exit_signature = signature;
+                        unsigned
+                    };
+
+                    while let Err(err) = ctx
+                        .binder_client
+                        .as_ref()
+                        .unwrap()
+                        .add_bridge_route(bridge_descriptor.clone())
                         .await
-                        .context("failed to go to binder")
                     {
                         log::warn!("{:?}", err);
                         smol::Timer::after(Duration::from_secs(1)).await;
