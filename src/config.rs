@@ -123,7 +123,7 @@ fn secret_key_default() -> PathBuf {
 }
 
 fn binder_http_default() -> String {
-    "https://binder-v4.geph.io".into()
+    "https://binder-v4.geph.io/next-gen".into()
 }
 
 fn binder_master_pk_default() -> String {
