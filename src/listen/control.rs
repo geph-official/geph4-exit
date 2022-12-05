@@ -157,7 +157,7 @@ impl BridgeExitProtocol for ControlService {
                         };
                         let signature = ctx
                             .signing_sk
-                            .sign(&stdcode::serialize(&unsigned).unwrap())
+                            .sign(&bincode::serialize(&unsigned).unwrap())
                             .to_bytes()
                             .to_vec()
                             .into();
