@@ -14,7 +14,7 @@ use smol_timeout::TimeoutExt;
 
 use std::sync::Arc;
 
-pub async fn handle_session(ctx: SessCtx) {
+pub async fn handle_session_legacy(ctx: SessCtx) {
     let fallible = async move {
         log::debug!("entering handle_session");
         let SessCtx { root, sess } = ctx;

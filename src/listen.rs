@@ -25,7 +25,8 @@ use x25519_dalek::StaticSecret;
 use self::control::ControlService;
 
 mod control;
-mod session;
+mod session_legacy;
+mod session_v2;
 /// the root context
 pub struct RootCtx {
     pub config: Config,
@@ -311,7 +312,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .await
                 .expect("can't accept from sosistab");
             let ctx1 = ctx1.clone();
-            smolscale::spawn(session::handle_session(ctx1.new_sess(sess))).detach();
+            smolscale::spawn(session_legacy::handle_session_legacy(ctx1.new_sess(sess))).detach();
         }
     };
     // future that uploads gauge statistics

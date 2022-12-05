@@ -332,15 +332,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-oneshot"
-version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "50f4770cbbff928c30a991de67fb3976f44d8e3e202f8c79ef91b47006e04904"
-dependencies = [
- "futures-micro",
-]
-
-[[package]]
 name = "async-process"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -517,9 +508,9 @@ dependencies = [
 
 [[package]]
 name = "bipe"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6b56bb2a757921d30da431cb3a31f4000e67cd77b5afe75ab541fca400c1155d"
+checksum = "d82b477ec343d3f07970a4cccdf47b2d62f2e648254f1fdc424f8764f0f3945e"
 dependencies = [
  "concurrent-queue 1.2.4",
  "event-listener",
@@ -1320,6 +1311,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "derivative"
+version = "2.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fcc3dd5e9e9c0b295d6e1e4d811fb6f157d5ffd784b8d202fc62eac8035a770b"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "dhat"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1704,12 +1706,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "futures-micro"
-version = "0.3.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "61e9325be55c5581082cd110294fa988c1f920bc573ec370ef201e33c469a95a"
-
-[[package]]
 name = "futures-sink"
 version = "0.3.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1815,10 +1811,10 @@ dependencies = [
  "hex",
  "libc",
  "log",
- "lru 0.6.6",
  "mimalloc",
  "mizaru",
  "moka",
+ "nanorpc",
  "nix 0.25.0",
  "num_cpus",
  "once_cell",
@@ -1838,6 +1834,7 @@ dependencies = [
  "smolscale",
  "socket2 0.4.7",
  "sosistab",
+ "sosistab2",
  "statsd",
  "stdcode",
  "structopt",
@@ -1852,8 +1849,6 @@ dependencies = [
 [[package]]
 name = "geph4-protocol"
 version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "898c6acf3b76e4ef24392c0684ecfb9157aa531a072597d32eb1844579509073"
 dependencies = [
  "acidjson",
  "anyhow",
@@ -2037,9 +2032,6 @@ name = "hashbrown"
 version = "0.11.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab5ef0d4909ef3724cc8cce6ccc8572c5c817592e9285f5464f8e86f8bd3726e"
-dependencies = [
- "ahash 0.7.6",
-]
 
 [[package]]
 name = "hashbrown"
@@ -2414,18 +2406,18 @@ dependencies = [
 
 [[package]]
 name = "lru"
-version = "0.6.6"
+version = "0.7.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ea2d928b485416e8908cff2d97d621db22b27f7b3b6729e438bcf42c671ba91"
+checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
 dependencies = [
- "hashbrown 0.11.2",
+ "hashbrown 0.12.3",
 ]
 
 [[package]]
 name = "lru"
-version = "0.7.8"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e999beba7b6e8345721bd280141ed958096a2e4abdf74f67ff4ce49b4b54e47a"
+checksum = "b6e8aaa3f231bb4bd57b84b2d5dc3ae7f350265df8aa96492e0bc394a1571909"
 dependencies = [
  "hashbrown 0.12.3",
 ]
@@ -3637,9 +3629,9 @@ dependencies = [
 
 [[package]]
 name = "rtrb"
-version = "0.1.4"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "318256ac02f7e11a48a10339ba5dca8bd7eb17496abf384e8ea909bb2ae5275f"
+checksum = "9026ee10cf6d8388598dc10601819be903d14528e05ec3ab97b9ade70e24819c"
 dependencies = [
  "cache-padded",
 ]
@@ -4099,16 +4091,15 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.3.49"
+version = "0.3.52"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75b1adada57639d497c1e8437ac6c3a3fd91bf32b367ae50e6198d127cf9736c"
+checksum = "59a476d69d941f80226a03f743665832ebc1ecb43ed7536e4343f4efb08921f8"
 dependencies = [
  "anyhow",
  "async-channel",
  "async-executor",
  "async-global-executor",
  "async-io",
- "async-oneshot",
  "async-task",
  "backtrace 0.3.66",
  "cache-padded",
@@ -4122,6 +4113,7 @@ dependencies = [
  "flume",
  "futures-intrusive",
  "futures-lite",
+ "futures-util",
  "log",
  "num_cpus",
  "once_cell",
@@ -4219,6 +4211,61 @@ dependencies = [
  "smol-timeout",
  "smolscale",
  "socket2 0.3.19",
+ "thiserror",
+ "tracing",
+ "x25519-dalek",
+]
+
+[[package]]
+name = "sosistab2"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4f2ecf98a0b9277d81b83781a09b090dbedc9e702e1057fe7864d897c1735aa7"
+dependencies = [
+ "anyhow",
+ "arc-swap",
+ "arrayref",
+ "async-dup",
+ "async-native-tls",
+ "async-trait",
+ "bipe",
+ "blake3 0.3.8",
+ "bytes",
+ "cached 0.26.2",
+ "concurrent-queue 1.2.4",
+ "dashmap 5.4.0",
+ "derivative",
+ "event-listener",
+ "fastrand",
+ "futures-util",
+ "hex",
+ "indexmap",
+ "log",
+ "lru 0.8.1",
+ "moka",
+ "native-tls",
+ "num_cpus",
+ "once_cell",
+ "parking_lot 0.11.2",
+ "pin-project",
+ "priority-queue",
+ "probability",
+ "rand 0.7.3",
+ "rand_chacha 0.2.2",
+ "reed-solomon-erasure",
+ "ring",
+ "rustc-hash",
+ "scopeguard",
+ "serde",
+ "slab",
+ "smallvec",
+ "smol",
+ "smol-timeout",
+ "smol_str",
+ "smolscale",
+ "socket2 0.3.19",
+ "stdcode",
+ "subtle",
  "thiserror",
  "tracing",
  "x25519-dalek",

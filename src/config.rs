@@ -53,7 +53,7 @@ pub struct Config {
     #[getset(get = "pub")]
     asn_sniproxies: Option<BTreeMap<String, SocketAddr>>,
 
-    /// Where to listen to for incoming sosistab connections.
+    /// Where to listen to for incoming *direct* sosistab connections.
     #[getset(get = "pub")]
     #[serde(default = "sosistab_listen_default")]
     sosistab_listen: String,
