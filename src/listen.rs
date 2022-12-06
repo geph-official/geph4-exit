@@ -79,7 +79,7 @@ impl From<Config> for RootCtx {
                         let mut perms = std::fs::metadata(cfg.secret_key()).unwrap().permissions();
                         perms.set_readonly(true);
                         perms.set_mode(0o600);
-                        std::fs::set_permissions(cfg.secret_key(), perms).unwrap();
+                        std::fs::set_permissions(cfg.secret_sosistab2_key(), perms).unwrap();
                     }
                     new_keypair
                 }
