@@ -1848,7 +1848,7 @@ dependencies = [
 
 [[package]]
 name = "geph4-protocol"
-version = "0.8.1"
+version = "0.9.1"
 dependencies = [
  "acidjson",
  "anyhow",
@@ -1888,7 +1888,6 @@ dependencies = [
  "smol-timeout",
  "smol_str",
  "smolscale",
- "sosistab",
  "stdcode",
  "strsim 0.10.0",
  "tap",
