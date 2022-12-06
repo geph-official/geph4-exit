@@ -165,12 +165,9 @@ impl BridgeExitProtocol for ControlService {
                             update_time: route_unixtime,
                             exit_signature: Bytes::new(),
                         };
-                        let signature = ctx
-                            .signing_sk
-                            .sign(&bincode::serialize(&unsigned).unwrap())
-                            .to_bytes()
-                            .to_vec()
-                            .into();
+                        let to_sign = bincode::serialize(&unsigned).unwrap();
+                        log::debug!("to sign: {}", hex::encode(&to_sign));
+                        let signature = ctx.signing_sk.sign(&to_sign).to_bytes().to_vec().into();
                         unsigned.exit_signature = signature;
                         unsigned
                     };
