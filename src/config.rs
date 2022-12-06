@@ -11,6 +11,11 @@ pub struct Config {
     #[serde(default = "secret_key_default")]
     secret_key: PathBuf,
 
+    /// Where to place the secret key for sosistab2. On first startup, a key will be written to this location
+    #[getset(get = "pub")]
+    #[serde(default = "secret_sosistab2_key_default")]
+    secret_sosistab2_key: PathBuf,
+
     /// Whether or not to limit the open ports to a "safe" list similar to the default policy of Tor exits. See https://github.com/geph-official/geph4-exit/blob/master/src/lists.rs
     #[getset(get_copy = "pub")]
     #[serde(default)]
@@ -57,6 +62,11 @@ pub struct Config {
     #[getset(get = "pub")]
     #[serde(default = "sosistab_listen_default")]
     sosistab_listen: String,
+
+    /// Where to listen to for incoming *direct* sosistab2 connections.
+    #[getset(get = "pub")]
+    #[serde(default = "sosistab_listen_default")]
+    sosistab2_listen: String,
 
     /// Configuration options for "official" servers connected to a binder
     #[getset(get = "pub")]
@@ -120,6 +130,10 @@ pub struct OfficialConfig {
 
 fn secret_key_default() -> PathBuf {
     "/var/local/geph4-exit.key".into()
+}
+
+fn secret_sosistab2_key_default() -> PathBuf {
+    "/var/local/geph4-exit-sosis2.key".into()
 }
 
 fn binder_http_default() -> String {

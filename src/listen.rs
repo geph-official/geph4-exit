@@ -4,25 +4,31 @@ use std::{
         atomic::{AtomicU64, AtomicUsize, Ordering},
         Arc,
     },
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime},
 };
 
 use crate::{asn::MY_PUBLIC_IP, config::Config, ratelimit::STAT_LIMITER, vpn};
+use bytes::Bytes;
+use ed25519_dalek::{ed25519::signature::Signature, Signer};
 use event_listener::Event;
 
 use dashmap::DashMap;
 use geph4_protocol::{
-    binder::{client::E2eeHttpTransport, protocol::BinderClient},
+    binder::{
+        client::E2eeHttpTransport,
+        protocol::{BinderClient, BridgeDescriptor},
+    },
     bridge_exit::serve_bridge_exit,
 };
 
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
 use sosistab::Session;
+use sosistab2::{MuxPublic, MuxSecret, ObfsUdpListener, ObfsUdpSecret};
 use sysinfo::{System, SystemExt};
 use x25519_dalek::StaticSecret;
 
-use self::control::ControlService;
+use self::{control::ControlService, session_v2::handle_pipe_v2};
 
 mod control;
 mod session_legacy;
@@ -36,6 +42,8 @@ pub struct RootCtx {
     // bridge_secret: String,
     signing_sk: ed25519_dalek::Keypair,
     sosistab_sk: x25519_dalek::StaticSecret,
+
+    pub sosistab2_sk: MuxSecret,
 
     session_count: AtomicUsize,
     raw_session_count: AtomicUsize,
@@ -52,6 +60,31 @@ pub struct RootCtx {
 
 impl From<Config> for RootCtx {
     fn from(cfg: Config) -> Self {
+        let sosistab2_sk = {
+            match std::fs::read(cfg.secret_sosistab2_key()) {
+                Ok(vec) => {
+                    bincode::deserialize(&vec).expect("failed to deserialize my own secret key")
+                }
+                Err(err) => {
+                    log::warn!(
+                        "can't read signing_sk, so creating one and saving it! {}",
+                        err
+                    );
+                    let new_keypair = MuxSecret::generate();
+                    if let Err(err) =
+                        std::fs::write(cfg.secret_key(), bincode::serialize(&new_keypair).unwrap())
+                    {
+                        log::error!("cannot save signing_sk persistently!!! {}", err);
+                    } else {
+                        let mut perms = std::fs::metadata(cfg.secret_key()).unwrap().permissions();
+                        perms.set_readonly(true);
+                        perms.set_mode(0o600);
+                        std::fs::set_permissions(cfg.secret_key(), perms).unwrap();
+                    }
+                    new_keypair
+                }
+            }
+        };
         let signing_sk = {
             match std::fs::read(cfg.secret_key()) {
                 Ok(vec) => {
@@ -99,6 +132,7 @@ impl From<Config> for RootCtx {
             }),
             signing_sk,
             sosistab_sk,
+            sosistab2_sk,
 
             session_count: Default::default(),
             raw_session_count: Default::default(),
@@ -241,7 +275,6 @@ pub struct SessCtx {
 }
 
 /// the main listening loop
-#[allow(clippy::too_many_arguments)]
 pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let exit_hostname = ctx
         .config
@@ -351,8 +384,54 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             smol::Timer::after(Duration::from_secs(10)).await;
         }
     };
+
+    let pipe_listen_fut = {
+        let ctx = ctx.clone();
+        smolscale::spawn(async move {
+            // TODO this key reuse is *probably* fine security-wise, but we might wanna switch this to something else
+            // This hack allows the client to deterministically get the correct ObfsUdpPublic, which is important for selfhosted instances having constant keys.
+            let secret = ObfsUdpSecret::from_bytes(ctx.sosistab2_sk.to_bytes());
+            let listen_addr = ctx
+                .config
+                .sosistab2_listen()
+                .parse()
+                .expect("cannot parse sosistab2 listening address");
+            let listener = ObfsUdpListener::new(listen_addr, ObfsUdpSecret::generate());
+            // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
+            if let Some(client) = ctx.binder_client.clone() {
+                let mut unsigned = BridgeDescriptor {
+                    is_direct: true,
+                    protocol: "sosistab2-obfsudp".into(),
+                    endpoint: SocketAddr::new((*MY_PUBLIC_IP).into(), listen_addr.port()),
+                    sosistab_key: bincode::serialize(&(
+                        secret.to_public(),
+                        ctx.sosistab2_sk.to_public(),
+                    ))
+                    .unwrap()
+                    .into(),
+                    exit_hostname: ctx.exit_hostname().into(),
+                    alloc_group: "self".into(),
+                    update_time: SystemTime::now()
+                        .duration_since(SystemTime::UNIX_EPOCH)
+                        .unwrap()
+                        .as_secs(),
+                    exit_signature: Bytes::new(),
+                };
+                let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
+                unsigned.exit_signature = sig.as_bytes().to_vec().into();
+                client.add_bridge_route(unsigned).await??;
+            }
+            // we now enter the usual feeding loop
+            loop {
+                let pipe = listener.accept().await?;
+                handle_pipe_v2(ctx.clone(), pipe);
+            }
+        })
+    };
+
     // race
     smol::future::race(control_prot_fut, self_bridge_fut)
         .or(gauge_fut)
+        .or(pipe_listen_fut)
         .await
 }

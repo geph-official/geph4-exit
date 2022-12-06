@@ -154,7 +154,7 @@ impl BridgeExitProtocol for ControlService {
                             is_direct: false,
                             protocol: "sosistab".into(),
                             endpoint: bridge_addr,
-                            sosistab_key: sosistab_pk,
+                            sosistab_key: sosistab_pk.as_bytes().to_vec().into(),
                             exit_hostname: ctx
                                 .config
                                 .official()
