@@ -71,12 +71,15 @@ impl From<Config> for RootCtx {
                         err
                     );
                     let new_keypair = MuxSecret::generate();
-                    if let Err(err) =
-                        std::fs::write(cfg.secret_key(), bincode::serialize(&new_keypair).unwrap())
-                    {
+                    if let Err(err) = std::fs::write(
+                        cfg.secret_sosistab2_key(),
+                        bincode::serialize(&new_keypair).unwrap(),
+                    ) {
                         log::error!("cannot save signing_sk persistently!!! {}", err);
                     } else {
-                        let mut perms = std::fs::metadata(cfg.secret_key()).unwrap().permissions();
+                        let mut perms = std::fs::metadata(cfg.secret_sosistab2_key())
+                            .unwrap()
+                            .permissions();
                         perms.set_readonly(true);
                         perms.set_mode(0o600);
                         std::fs::set_permissions(cfg.secret_sosistab2_key(), perms).unwrap();
