@@ -24,7 +24,7 @@ use geph4_protocol::{
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
 use sosistab::Session;
-use sosistab2::{MuxPublic, MuxSecret, ObfsUdpListener, ObfsUdpSecret};
+use sosistab2::{MuxSecret, ObfsUdpListener, ObfsUdpSecret};
 use sysinfo::{System, SystemExt};
 use x25519_dalek::StaticSecret;
 
@@ -410,7 +410,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .unwrap()
                     .into(),
                     exit_hostname: ctx.exit_hostname().into(),
-                    alloc_group: "self".into(),
+                    alloc_group: "direct".into(),
                     update_time: SystemTime::now()
                         .duration_since(SystemTime::UNIX_EPOCH)
                         .unwrap()
