@@ -122,7 +122,7 @@ pub async fn handle_session_legacy(ctx: SessCtx) {
                                 "" => {
                                     if let Some(stat) = root.stat_client.as_ref() {
                                         stat.count(
-                                            &format!("watchdogs.{}", root.exit_hostname()),
+                                            &format!("watchdogs.{}", root.exit_hostname_dashed()),
                                             1.0,
                                         );
                                     }

@@ -149,7 +149,7 @@ impl From<Config> for RootCtx {
 }
 
 impl RootCtx {
-    pub fn exit_hostname(&self) -> String {
+    pub fn exit_hostname_dashed(&self) -> String {
         self.config
             .official()
             .as_ref()
@@ -412,7 +412,13 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     ))
                     .unwrap()
                     .into(),
-                    exit_hostname: ctx.exit_hostname().into(),
+                    exit_hostname: ctx
+                        .config
+                        .official()
+                        .as_ref()
+                        .unwrap()
+                        .exit_hostname()
+                        .into(),
                     alloc_group: "direct".into(),
                     update_time: SystemTime::now()
                         .duration_since(SystemTime::UNIX_EPOCH)

@@ -64,7 +64,7 @@ impl BridgeExitProtocol for ControlService {
         bridge_group: SmolStr,
     ) -> SocketAddr {
         let bridge_pkt_key = {
-            let exit_hostname = self.ctx.exit_hostname();
+            let exit_hostname = self.ctx.exit_hostname_dashed();
             move |bridge_group: &str| {
                 format!(
                     "raw_flow.{}.{}",
