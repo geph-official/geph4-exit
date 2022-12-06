@@ -65,7 +65,7 @@ pub struct Config {
 
     /// Where to listen to for incoming *direct* sosistab2 connections.
     #[getset(get = "pub")]
-    #[serde(default = "sosistab_listen_default")]
+    #[serde(default = "sosistab2_listen_default")]
     sosistab2_listen: String,
 
     /// Configuration options for "official" servers connected to a binder
@@ -80,6 +80,10 @@ pub struct Config {
 
 fn sosistab_listen_default() -> String {
     "[::0]:19831".into()
+}
+
+fn sosistab2_listen_default() -> String {
+    "[::0]:17814".into()
 }
 
 fn conn_count_limit_default() -> usize {
