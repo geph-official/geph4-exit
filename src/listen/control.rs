@@ -8,7 +8,7 @@ use ed25519_dalek::Signer;
 
 use geph4_protocol::{
     binder::protocol::BridgeDescriptor,
-    bridge_exit::{BridgeExitProtocol, RawProtocol},
+    bridge_exit::{BridgeExitProtocol, LegacyProtocol},
 };
 use moka::sync::Cache;
 use rand::prelude::*;
@@ -31,7 +31,8 @@ pub struct ControlService {
     /// A cache mapping udp/tcp bridge endpoints to background tasks resources on their behalf.
     ///
     /// This has a very short time-to-idle to clear out outdated bridges quickly.
-    bridge_to_manager: Cache<(RawProtocol, SocketAddr), (SocketAddr, Arc<smol::Task<Infallible>>)>,
+    bridge_to_manager:
+        Cache<(LegacyProtocol, SocketAddr), (SocketAddr, Arc<smol::Task<Infallible>>)>,
 }
 
 impl ControlService {
@@ -47,9 +48,18 @@ impl ControlService {
 
 #[async_trait]
 impl BridgeExitProtocol for ControlService {
+    async fn advertise_raw_v2(
+        &self,
+        protocol: SmolStr,
+        bridge_addr: SocketAddr,
+        bridge_group: SmolStr,
+    ) -> SocketAddr {
+        todo!()
+    }
+
     async fn advertise_raw(
         &self,
-        protocol: RawProtocol,
+        protocol: LegacyProtocol,
         bridge_addr: SocketAddr,
         bridge_group: SmolStr,
     ) -> SocketAddr {
@@ -143,7 +153,7 @@ impl BridgeExitProtocol for ControlService {
                             is_direct: false,
                             protocol: "sosistab".into(),
                             endpoint: bridge_addr,
-                            sosistab_key: sosistab_pk,
+                            sosistab_key: sosistab_pk.as_bytes().to_vec().into(),
                             exit_hostname: ctx
                                 .config
                                 .official()
@@ -182,11 +192,11 @@ impl BridgeExitProtocol for ControlService {
             let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), my_port);
             log::debug!("b2e RESOLVE {bridge_addr} => my_addr");
             self.bridge_to_manager.insert(
-                (RawProtocol::Tcp, bridge_addr),
+                (LegacyProtocol::Tcp, bridge_addr),
                 (my_addr, maintain_task.clone()),
             );
             self.bridge_to_manager
-                .insert((RawProtocol::Udp, bridge_addr), (my_addr, maintain_task));
+                .insert((LegacyProtocol::Udp, bridge_addr), (my_addr, maintain_task));
             my_addr
         }
     }

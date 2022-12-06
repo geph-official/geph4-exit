@@ -1851,9 +1851,9 @@ dependencies = [
 
 [[package]]
 name = "geph4-protocol"
-version = "0.8.1"
+version = "0.9.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "898c6acf3b76e4ef24392c0684ecfb9157aa531a072597d32eb1844579509073"
+checksum = "57b71949ed082157fc2aac391ff4ea675a651eb826575a481e49c75d766fc4ad"
 dependencies = [
  "acidjson",
  "anyhow",
@@ -1893,7 +1893,6 @@ dependencies = [
  "smol-timeout",
  "smol_str",
  "smolscale",
- "sosistab",
  "stdcode",
  "strsim 0.10.0",
  "tap",
