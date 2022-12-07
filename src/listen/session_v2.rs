@@ -41,7 +41,7 @@ pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
     let key = blake3::hash(pipe.peer_metadata().as_bytes());
     let (mplex, _) = BIG_MULTIPLEX_TABLE.get_with(key, || {
         // TODO actually put this SK somewhere
-        let mplex = Arc::new(sosistab2::Multiplex::new(MuxSecret::generate(), None));
+        let mplex = Arc::new(sosistab2::Multiplex::new(ctx.sosistab2_sk.clone(), None));
         let task = smolscale::spawn(handle_session_v2(ctx.clone(), mplex.clone()));
         (mplex, task.into())
     });
@@ -54,11 +54,11 @@ async fn handle_session_v2(
     mux: Arc<sosistab2::Multiplex>,
 ) -> anyhow::Result<()> {
     let client_exit = Arc::new(ClientExitService(ClientExitImpl::new(ctx.clone())));
-    let reaper = TaskReaper::new();
+    // let reaper = TaskReaper::new();
     loop {
         let conn = mux.accept_conn().await?;
 
-        reaper.attach(smolscale::spawn(
+        smolscale::spawn(
             handle_conn(
                 ctx.clone(),
                 client_exit.clone(),
@@ -66,7 +66,8 @@ async fn handle_session_v2(
                 rand::thread_rng().gen(),
             )
             .map_err(|e| log::debug!("connection handler died with {:?}", e)),
-        ));
+        )
+        .detach();
     }
 }
 
