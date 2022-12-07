@@ -399,7 +399,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .sosistab2_listen()
                 .parse()
                 .expect("cannot parse sosistab2 listening address");
-            let listener = ObfsUdpListener::new(listen_addr, ObfsUdpSecret::generate());
+            let listener = ObfsUdpListener::new(listen_addr, secret.clone());
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
             let mut _task = None;
             if let Some(client) = ctx.binder_client.clone() {
