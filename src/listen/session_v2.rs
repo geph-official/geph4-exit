@@ -124,7 +124,7 @@ impl ClientExitImpl {
         Self {
             ctx,
             is_plus: AtomicBool::new(false),
-            authed: AtomicBool::new(false),
+            authed: AtomicBool::new(true), // FIX LATER
         }
     }
 
