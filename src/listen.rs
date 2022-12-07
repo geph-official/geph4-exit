@@ -401,34 +401,50 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .expect("cannot parse sosistab2 listening address");
             let listener = ObfsUdpListener::new(listen_addr, ObfsUdpSecret::generate());
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
+            let mut _task = None;
             if let Some(client) = ctx.binder_client.clone() {
-                let mut unsigned = BridgeDescriptor {
-                    is_direct: true,
-                    protocol: "sosistab2-obfsudp".into(),
-                    endpoint: SocketAddr::new((*MY_PUBLIC_IP).into(), listen_addr.port()),
-                    sosistab_key: bincode::serialize(&(
-                        secret.to_public(),
-                        ctx.sosistab2_sk.to_public(),
-                    ))
-                    .unwrap()
-                    .into(),
-                    exit_hostname: ctx
-                        .config
-                        .official()
-                        .as_ref()
-                        .unwrap()
-                        .exit_hostname()
-                        .into(),
-                    alloc_group: "direct".into(),
-                    update_time: SystemTime::now()
-                        .duration_since(SystemTime::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs(),
-                    exit_signature: Bytes::new(),
-                };
-                let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
-                unsigned.exit_signature = sig.as_bytes().to_vec().into();
-                client.add_bridge_route(unsigned).await??;
+                let ctx = ctx.clone();
+                _task = Some(smolscale::spawn(async move {
+                    loop {
+                        let fallible = async {
+                            let mut unsigned = BridgeDescriptor {
+                                is_direct: true,
+                                protocol: "sosistab2-obfsudp".into(),
+                                endpoint: SocketAddr::new(
+                                    (*MY_PUBLIC_IP).into(),
+                                    listen_addr.port(),
+                                ),
+                                sosistab_key: bincode::serialize(&(
+                                    secret.to_public(),
+                                    ctx.sosistab2_sk.to_public(),
+                                ))
+                                .unwrap()
+                                .into(),
+                                exit_hostname: ctx
+                                    .config
+                                    .official()
+                                    .as_ref()
+                                    .unwrap()
+                                    .exit_hostname()
+                                    .into(),
+                                alloc_group: "direct".into(),
+                                update_time: SystemTime::now()
+                                    .duration_since(SystemTime::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                                exit_signature: Bytes::new(),
+                            };
+                            let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
+                            unsigned.exit_signature = sig.as_bytes().to_vec().into();
+                            client.add_bridge_route(unsigned).await??;
+                            anyhow::Ok(())
+                        };
+                        if let Err(err) = fallible.await {
+                            log::warn!("failed to upload direct route: {:?}", err);
+                        }
+                        smol::Timer::after(Duration::from_secs(1)).await;
+                    }
+                }));
             }
             // we now enter the usual feeding loop
             loop {
