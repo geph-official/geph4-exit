@@ -1,4 +1,4 @@
-use std::{num::NonZeroU32, sync::atomic::AtomicU64};
+use std::{num::NonZeroU32, ops::Deref, sync::atomic::AtomicU64};
 
 use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
@@ -83,7 +83,9 @@ impl RateLimiter {
         if bytes == 0 || self.unlimited {
             return;
         }
-        GLOBAL_RATE_LIMIT.wait(bytes).await;
+        if (self as *const _) != (GLOBAL_RATE_LIMIT.deref() as *const _) {
+            GLOBAL_RATE_LIMIT.wait(bytes).await;
+        }
         let bytes = NonZeroU32::new(bytes as u32).unwrap();
         while let Err(err) = self.inner.check_n(bytes) {
             match err {
