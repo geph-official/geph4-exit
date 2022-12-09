@@ -1,6 +1,6 @@
 use crate::asn::MY_PUBLIC_IP;
 
-use super::{session_legacy, RootCtx};
+use super::{session_legacy, session_v2::handle_pipe_v2, RootCtx};
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -12,9 +12,10 @@ use geph4_protocol::{
 };
 use moka::sync::Cache;
 use rand::prelude::*;
-use rand_chacha::ChaCha20Rng;
+
 use smol::prelude::*;
 use smol_str::SmolStr;
+use sosistab2::{ObfsUdpListener, ObfsUdpSecret};
 
 use std::{
     convert::Infallible,
@@ -33,6 +34,11 @@ pub struct ControlService {
     /// This has a very short time-to-idle to clear out outdated bridges quickly.
     bridge_to_manager:
         Cache<(LegacyProtocol, SocketAddr), (SocketAddr, Arc<smol::Task<Infallible>>)>,
+
+    /// Cache of udp stuff
+    v2_obfsudp_listeners: Cache<SocketAddr, (SocketAddr, Arc<smol::Task<Infallible>>)>,
+    /// Cache of tls stuff
+    v2_obfstls_listeners: Cache<SocketAddr, (SocketAddr, Arc<smol::Task<Infallible>>)>,
 }
 
 impl ControlService {
@@ -40,6 +46,12 @@ impl ControlService {
         Self {
             ctx,
             bridge_to_manager: Cache::builder()
+                .time_to_idle(Duration::from_secs(120))
+                .build(),
+            v2_obfstls_listeners: Cache::builder()
+                .time_to_idle(Duration::from_secs(120))
+                .build(),
+            v2_obfsudp_listeners: Cache::builder()
                 .time_to_idle(Duration::from_secs(120))
                 .build(),
         }
@@ -54,7 +66,73 @@ impl BridgeExitProtocol for ControlService {
         bridge_addr: SocketAddr,
         bridge_group: SmolStr,
     ) -> SocketAddr {
-        todo!()
+        match protocol.as_str() {
+            "sosistab2-obfsudp" => {
+                if let Some((addr, _)) = self.v2_obfsudp_listeners.get(&bridge_addr) {
+                    return addr;
+                };
+                // create a listener
+                let (addr, listener, key) = loop {
+                    let addr: SocketAddr =
+                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
+                            .parse()
+                            .unwrap();
+                    let key = ObfsUdpSecret::generate();
+                    match ObfsUdpListener::bind(addr, key.clone()) {
+                        Ok(listener) => break (addr, listener, key.to_public()),
+                        Err(_err) => {
+                            log::warn!("cannot bind to {}", addr);
+                        }
+                    }
+                };
+                let ctx = self.ctx.clone();
+                self.v2_obfsudp_listeners.insert(
+                    bridge_addr,
+                    (
+                        addr,
+                        smolscale::spawn(async move {
+                            let _forwarder = {
+                                let ctx = ctx.clone();
+                                smolscale::spawn(async move {
+                                    loop {
+                                        let pipe = listener
+                                            .accept()
+                                            .await
+                                            .expect("oh no how did this happen");
+                                        handle_pipe_v2(ctx.clone(), pipe);
+                                    }
+                                })
+                            };
+                            binder_upload_loop(
+                                ctx.clone(),
+                                BridgeDescriptor {
+                                    is_direct: false,
+                                    protocol: "sosistab2-obfsudp".into(),
+                                    endpoint: bridge_addr,
+                                    sosistab_key: bincode::serialize(&(
+                                        key,
+                                        ctx.sosistab2_sk.to_public(),
+                                    ))
+                                    .unwrap()
+                                    .into(),
+                                    exit_hostname: ctx.exit_hostname().into(),
+                                    alloc_group: bridge_group,
+                                    update_time: 0,
+                                    exit_signature: Bytes::new(),
+                                },
+                            )
+                            .await
+                        })
+                        .into(),
+                    ),
+                );
+                addr
+            }
+            _ => {
+                // return a dummy
+                "0.0.0.0:12345".parse().unwrap()
+            }
+        }
     }
 
     async fn advertise_raw(
@@ -79,18 +157,10 @@ impl BridgeExitProtocol for ControlService {
             exit_addr
         } else {
             log::debug!("b2e MISS {bridge_addr}");
-            // we DETERMINISTICALLY create a sosistab secret in order to not invalidate all routes upon restart
-            let mut rng = ChaCha20Rng::from_seed(
-                *blake3::keyed_hash(
-                    blake3::hash(&self.ctx.signing_sk.to_bytes()).as_bytes(),
-                    bridge_addr.to_string().as_bytes(),
-                )
-                .as_bytes(),
-            );
-            let sosis_secret = x25519_dalek::StaticSecret::new(&mut rng);
+            let sosis_secret = x25519_dalek::StaticSecret::new(rand::thread_rng());
             let flow_key = bridge_pkt_key(&bridge_group);
-            let mut to_repeat = || {
-                let a: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
+            let to_repeat = || {
+                let a: SocketAddr = format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
                     .parse()
                     .unwrap();
                 let ctx = self.ctx.clone();
@@ -144,50 +214,23 @@ impl BridgeExitProtocol for ControlService {
                     }
                 });
                 // main loop that just uploads stuff to the binder indefinitely
-                loop {
-                    let route_unixtime = SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap()
-                        .as_secs();
-                    let bridge_descriptor = {
-                        let mut unsigned = BridgeDescriptor {
-                            is_direct: false,
-                            protocol: "sosistab".into(),
-                            endpoint: bridge_addr,
-                            sosistab_key: sosistab_pk.as_bytes().to_vec().into(),
-                            exit_hostname: ctx
-                                .config
-                                .official()
-                                .as_ref()
-                                .unwrap()
-                                .exit_hostname()
-                                .into(),
-                            alloc_group: bridge_group.clone(),
-                            update_time: route_unixtime,
-                            exit_signature: Bytes::new(),
-                        };
-                        let signature = ctx
-                            .signing_sk
-                            .sign(&bincode::serialize(&unsigned).unwrap())
-                            .to_bytes()
-                            .to_vec()
-                            .into();
-                        unsigned.exit_signature = signature;
-                        unsigned
-                    };
-
-                    while let Err(err) = ctx
-                        .binder_client
+                let bd_template = BridgeDescriptor {
+                    is_direct: false,
+                    protocol: "sosistab".into(),
+                    endpoint: bridge_addr,
+                    sosistab_key: sosistab_pk.as_bytes().to_vec().into(),
+                    exit_hostname: ctx
+                        .config
+                        .official()
                         .as_ref()
                         .unwrap()
-                        .add_bridge_route(bridge_descriptor.clone())
-                        .await
-                    {
-                        log::warn!("{:?}", err);
-                        smol::Timer::after(Duration::from_secs(1)).await;
-                    }
-                    smol::Timer::after(Duration::from_secs(fastrand::u64(60..120))).await;
-                }
+                        .exit_hostname()
+                        .into(),
+                    alloc_group: bridge_group.clone(),
+                    update_time: 0,
+                    exit_signature: Bytes::new(),
+                };
+                binder_upload_loop(ctx.clone(), bd_template).await
             }));
             // Right now, all we do is TCP and UDP, somewhat unfortunately, due to the old binder schema.
             let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), my_port);
@@ -200,5 +243,39 @@ impl BridgeExitProtocol for ControlService {
                 .insert((LegacyProtocol::Udp, bridge_addr), (my_addr, maintain_task));
             my_addr
         }
+    }
+}
+
+async fn binder_upload_loop(ctx: Arc<RootCtx>, bd_template: BridgeDescriptor) -> Infallible {
+    // main loop that just uploads stuff to the binder indefinitely
+    loop {
+        let route_unixtime = SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_secs();
+        let bridge_descriptor = {
+            let mut unsigned = bd_template.clone();
+            unsigned.update_time = route_unixtime;
+            let signature = ctx
+                .signing_sk
+                .sign(&bincode::serialize(&unsigned).unwrap())
+                .to_bytes()
+                .to_vec()
+                .into();
+            unsigned.exit_signature = signature;
+            unsigned
+        };
+
+        while let Err(err) = ctx
+            .binder_client
+            .as_ref()
+            .unwrap()
+            .add_bridge_route(bridge_descriptor.clone())
+            .await
+        {
+            log::warn!("{:?}", err);
+            smol::Timer::after(Duration::from_secs(1)).await;
+        }
+        smol::Timer::after(Duration::from_secs(fastrand::u64(60..120))).await;
     }
 }

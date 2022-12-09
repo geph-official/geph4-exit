@@ -158,6 +158,14 @@ impl RootCtx {
             .replace('.', "-")
     }
 
+    pub fn exit_hostname(&self) -> String {
+        self.config
+            .official()
+            .as_ref()
+            .map(|official| official.exit_hostname().to_owned())
+            .unwrap_or_default()
+    }
+
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {
         SessCtx {
             root: self.clone(),
@@ -399,7 +407,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .sosistab2_listen()
                 .parse()
                 .expect("cannot parse sosistab2 listening address");
-            let listener = ObfsUdpListener::new(listen_addr, secret.clone());
+            let listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
             let mut _task = None;
             if let Some(client) = ctx.binder_client.clone() {

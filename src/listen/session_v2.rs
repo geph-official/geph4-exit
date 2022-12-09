@@ -13,8 +13,8 @@ use smol::{
     stream::StreamExt,
     Task,
 };
-use smolscale::reaper::TaskReaper;
-use sosistab2::{MuxSecret, MuxStream};
+
+use sosistab2::{MuxStream};
 
 use std::{
     sync::{
@@ -136,11 +136,11 @@ impl ClientExitImpl {
 
 #[async_trait]
 impl ClientExitProtocol for ClientExitImpl {
-    async fn validate(&self, token: BlindToken) -> bool {
+    async fn validate(&self, _token: BlindToken) -> bool {
         // TODO
         self.authed.store(true, Ordering::SeqCst);
         true
     }
 
-    async fn telemetry_heartbeat(&self, tele: ClientTelemetry) {}
+    async fn telemetry_heartbeat(&self, _tele: ClientTelemetry) {}
 }

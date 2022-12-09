@@ -862,6 +862,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "closure"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d6173fd61b610d15a7566dd7b7620775627441c4ab9dac8906e17cb93a24b782"
+
+[[package]]
 name = "cloudabi"
 version = "0.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1796,6 +1802,7 @@ dependencies = [
  "bytes",
  "cached 0.26.2",
  "cidr-utils",
+ "closure",
  "dashmap 4.0.2",
  "ed25519-dalek",
  "env_logger",
@@ -4219,9 +4226,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.2.6"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b2b9ee643a1897fa36b93b832ea743a59cc850d8815185344d815498a557b9de"
+checksum = "c5d71b866cf7f41d0dea9a1e1618145cdd56afb6b2824fd69ac0ab295ab85dd2"
 dependencies = [
  "anyhow",
  "arc-swap",

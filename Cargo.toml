@@ -76,8 +76,9 @@ sysinfo = "0.26.5"
 
 mimalloc = { version = "0.1.30"}
 stdcode = "0.1.13"
-sosistab2 = "0.2"
+sosistab2 = "0.3"
 nanorpc = "0.1.12"
+closure = "0.3.0"
 
 [profile.release]
 panic = "abort"
