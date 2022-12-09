@@ -79,6 +79,7 @@ stdcode = "0.1.13"
 sosistab2 = "0.3"
 nanorpc = "0.1.12"
 closure = "0.3.0"
+async-recursion = "1.0.0"
 
 [profile.release]
 panic = "abort"

@@ -1,5 +1,6 @@
 use std::{num::NonZeroU32, sync::atomic::AtomicU64};
 
+use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use once_cell::sync::Lazy;
 
@@ -19,6 +20,8 @@ pub static STAT_LIMITER: Lazy<
 });
 
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
+
+static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(100_000));
 
 /// A generic rate limiter.
 pub struct RateLimiter {
@@ -75,10 +78,12 @@ impl RateLimiter {
     }
 
     /// Waits until the given number of bytes can be let through.
+    #[async_recursion]
     pub async fn wait(&self, bytes: usize) {
         if bytes == 0 || self.unlimited {
             return;
         }
+        GLOBAL_RATE_LIMIT.wait(bytes).await;
         let bytes = NonZeroU32::new(bytes as u32).unwrap();
         while let Err(err) = self.inner.check_n(bytes) {
             match err {

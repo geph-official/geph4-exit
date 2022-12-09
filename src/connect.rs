@@ -38,20 +38,7 @@ async fn resolve_name_inner(name: String) -> anyhow::Result<SocketAddr> {
     }
 
     let vec: Vec<SocketAddr> = smol::net::resolve(&name).await?.into_iter().collect();
-    // let v4s: Vec<SocketAddrV4> = vec
-    //     .iter()
-    //     .filter_map(|v| match v {
-    //         SocketAddr::V4(v) => Some(*v),
-    //         _ => None,
-    //     })
-    //     .collect();
-    // let v6s: Vec<SocketAddrV6> = vec
-    //     .iter()
-    //     .filter_map(|v| match v {
-    //         SocketAddr::V6(v) => Some(*v),
-    //         _ => None,
-    //     })
-    //     .collect();
+
     if let Some(s) = vec.get(0) {
         DNS_CACHE.insert(name, *s);
         Ok(*s)
