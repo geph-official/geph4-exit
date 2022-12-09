@@ -85,11 +85,12 @@ impl BridgeExitProtocol for ControlService {
                         }
                     }
                 };
+                let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), addr.port());
                 let ctx = self.ctx.clone();
                 self.v2_obfsudp_listeners.insert(
                     bridge_addr,
                     (
-                        addr,
+                        my_addr,
                         smolscale::spawn(async move {
                             let _forwarder = {
                                 let ctx = ctx.clone();
@@ -126,7 +127,8 @@ impl BridgeExitProtocol for ControlService {
                         .into(),
                     ),
                 );
-                addr
+
+                my_addr
             }
             _ => {
                 // return a dummy
