@@ -111,6 +111,7 @@ async fn handle_conn(
             let client_exit = client_exit.clone();
             let ctx = ctx.clone();
             smolscale::spawn::<anyhow::Result<()>>(async move {
+                vpn_stream.recv_urel().await?;
                 if start_vpn {
                     let vpn_ipv4 = client_exit.0.get_vpn_ipv4().await.unwrap();
                     let downstream = vpn_subscribe_down(vpn_ipv4);
