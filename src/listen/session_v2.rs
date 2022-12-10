@@ -1,53 +1,64 @@
+use anyhow::Context;
 use async_trait::async_trait;
+use dashmap::DashMap;
 use futures_util::{AsyncReadExt, AsyncWriteExt, TryFutureExt};
 use geph4_protocol::{
     binder::protocol::{BlindToken, Level},
     client_exit::{ClientExitProtocol, ClientExitService, ClientTelemetry, CLIENT_EXIT_PSEUDOHOST},
 };
-use moka::sync::Cache;
+
 use nanorpc::{JrpcRequest, RpcService};
 use once_cell::sync::Lazy;
 use rand::Rng;
 use smol::{
+    future::FutureExt,
     io::{AsyncBufReadExt, BufReader},
     stream::StreamExt,
     Task,
 };
 
+use smol_timeout::TimeoutExt;
+use smolscale::reaper::TaskReaper;
 use sosistab2::MuxStream;
 
 use std::{
+    net::Ipv4Addr,
     sync::{
         atomic::{AtomicBool, Ordering},
-        Arc,
+        Arc, Weak,
     },
     time::Duration,
 };
 
-use crate::{connect::proxy_loop, ratelimit::RateLimiter};
+use crate::{
+    connect::proxy_loop,
+    ratelimit::RateLimiter,
+    vpn::{vpn_send_up, vpn_subscribe_down, IpAddrAssigner},
+};
 
 use super::RootCtx;
 
-type TableEntry = (Arc<sosistab2::Multiplex>, Arc<Task<anyhow::Result<()>>>);
+type TableEntry = (Weak<sosistab2::Multiplex>, Arc<Task<anyhow::Result<()>>>);
 
 /// Handles a sosistab2 pipe, redirecting it to the appropriate multiplex.
 pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
-    static BIG_MULTIPLEX_TABLE: Lazy<Cache<blake3::Hash, TableEntry>> = Lazy::new(|| {
-        Cache::builder()
-            .max_capacity(100_000)
-            .time_to_idle(Duration::from_secs(3600))
-            .build()
-    });
+    static BIG_MULTIPLEX_TABLE: Lazy<DashMap<blake3::Hash, TableEntry>> =
+        Lazy::new(Default::default);
     let key = blake3::hash(pipe.peer_metadata().as_bytes());
     log::debug!("sesh: {}", key);
-    let (mplex, _) = BIG_MULTIPLEX_TABLE.get_with(key, || {
+    let mplex = BIG_MULTIPLEX_TABLE.entry(key).or_insert_with(move || {
         log::debug!("sesh MISS: {}", key);
         // TODO actually put this SK somewhere
         let mplex = Arc::new(sosistab2::Multiplex::new(ctx.sosistab2_sk.clone(), None));
-        let task = smolscale::spawn(handle_session_v2(ctx.clone(), mplex.clone()));
-        (mplex, task.into())
+        mplex.add_drop_friend(scopeguard::guard((), move |_| {
+            BIG_MULTIPLEX_TABLE.remove(&key);
+        }));
+        let task = smolscale::spawn(handle_session_v2(ctx, mplex.clone()));
+        (Arc::downgrade(&mplex), task.into())
     });
-    mplex.add_pipe(pipe);
+    if let Some(mplex) = mplex.value().0.upgrade() {
+        mplex.add_pipe(pipe);
+    }
 }
 
 /// Handles a sosistab2 multiplex. We do not try to timeout etc here. The Big Multiplex Table handles this.
@@ -55,21 +66,32 @@ async fn handle_session_v2(
     ctx: Arc<RootCtx>,
     mux: Arc<sosistab2::Multiplex>,
 ) -> anyhow::Result<()> {
-    let client_exit = Arc::new(ClientExitService(ClientExitImpl::new(ctx.clone())));
-    // let reaper = TaskReaper::new();
+    let vpn_ipv4 = if ctx.config.nat_external_iface().is_some() {
+        Some(IpAddrAssigner::global().assign())
+    } else {
+        None
+    };
+    let client_exit = Arc::new(ClientExitService(ClientExitImpl::new(
+        ctx.clone(),
+        vpn_ipv4.map(|v| v.addr()),
+    )));
+    let reaper = TaskReaper::new();
     loop {
-        let conn = mux.accept_conn().await?;
+        let conn = mux
+            .accept_conn()
+            .timeout(Duration::from_secs(3600))
+            .await
+            .context("timeout")??;
 
-        smolscale::spawn(
+        reaper.attach(smolscale::spawn(
             handle_conn(
                 ctx.clone(),
                 client_exit.clone(),
                 conn,
                 rand::thread_rng().gen(),
             )
-            .map_err(|e| log::debug!("connection handler died with {:?}", e)),
-        )
-        .detach();
+            .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e)),
+        ));
     }
 }
 
@@ -82,6 +104,35 @@ async fn handle_conn(
     let hostname = stream.additional_info();
     log::debug!("req for {hostname}");
     if hostname == CLIENT_EXIT_PSEUDOHOST {
+        // also run the VPN!
+        let vpn_stream = stream.clone();
+        let start_vpn = ctx.config.nat_external_iface().is_some();
+        let _vpn_task = {
+            let client_exit = client_exit.clone();
+            let ctx = ctx.clone();
+            smolscale::spawn::<anyhow::Result<()>>(async move {
+                if start_vpn {
+                    let vpn_ipv4 = client_exit.0.get_vpn_ipv4().await.unwrap();
+                    let downstream = vpn_subscribe_down(vpn_ipv4);
+
+                    let send_loop = async {
+                        loop {
+                            let next = downstream.recv().await?;
+                            vpn_stream.send_urel(next).await?;
+                        }
+                    };
+                    let recv_loop = async {
+                        loop {
+                            let next = vpn_stream.recv_urel().await?;
+                            vpn_send_up(&ctx, vpn_ipv4, &next).await;
+                        }
+                    };
+                    send_loop.race(recv_loop).await
+                } else {
+                    Ok(())
+                }
+            })
+        };
         // run the loop
         let up_read = BufReader::new(stream.clone()).take(1_000_000);
         let mut lines = up_read.lines();
@@ -129,15 +180,17 @@ struct ClientExitImpl {
     ctx: Arc<RootCtx>,
     is_plus: AtomicBool,
     authed: AtomicBool,
+    vpn_ipv4: Option<Ipv4Addr>,
 }
 
 impl ClientExitImpl {
     /// Creates a new ClientExitImpl.
-    pub fn new(ctx: Arc<RootCtx>) -> Self {
+    pub fn new(ctx: Arc<RootCtx>, vpn_ipv4: Option<Ipv4Addr>) -> Self {
         Self {
             ctx,
             is_plus: AtomicBool::new(false),
             authed: AtomicBool::new(true), // FIX LATER
+            vpn_ipv4,
         }
     }
 
@@ -179,4 +232,8 @@ impl ClientExitProtocol for ClientExitImpl {
     }
 
     async fn telemetry_heartbeat(&self, _tele: ClientTelemetry) {}
+
+    async fn get_vpn_ipv4(&self) -> Option<Ipv4Addr> {
+        self.vpn_ipv4
+    }
 }

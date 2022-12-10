@@ -14,8 +14,8 @@ use pnet_packet::{
     ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, udp::UdpPacket, Packet,
 };
 use rand::prelude::*;
-use smol::channel::Sender;
-use sosistab::{Buff, BuffMut};
+use smol::channel::{Receiver, Sender};
+use sosistab::BuffMut;
 
 use geph4_protocol::VpnMessage;
 use std::{
@@ -24,15 +24,11 @@ use std::{
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::{Deref, DerefMut},
     os::unix::prelude::{AsRawFd, FromRawFd},
-    sync::{atomic::Ordering, Arc},
+    sync::Arc,
 };
 use tun::{platform::Device, Device as Device2};
 
-use crate::{
-    connect::proxy_loop,
-    listen::RootCtx,
-    ratelimit::{RateLimiter, STAT_LIMITER, TOTAL_BW_COUNT},
-};
+use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
@@ -107,37 +103,15 @@ pub async fn handle_vpn_session(
     scopeguard::defer!({
         INCOMING_MAP.invalidate(&addr);
     });
-    let stat_key = format!(
-        "exit_usage.{}",
-        ctx.config
-            .official()
-            .as_ref()
-            .map(|official| official.exit_hostname().to_string())
-            .unwrap_or_default()
-            .replace('.', "-")
-    );
 
-    let (send_down, recv_down) = smol::channel::bounded(if rate_limit.is_unlimited() {
-        65536
-    } else {
-        (rate_limit.limit() / 4) as usize
-    });
-    INCOMING_MAP.insert(addr, send_down);
+    let recv_down = vpn_subscribe_down(assigned_ip.addr());
     let _down_task: smol::Task<anyhow::Result<()>> = {
-        let stat_key = stat_key.clone();
         let ctx = ctx.clone();
         let mux = mux.clone();
         smolscale::spawn(async move {
             loop {
                 let bts = recv_down.recv().await?;
-                if let Some(stat_client) = ctx.stat_client.as_ref() {
-                    let n = bts.len();
-                    TOTAL_BW_COUNT.fetch_add(n as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        stat_client
-                            .count(&stat_key, TOTAL_BW_COUNT.swap(0, Ordering::Relaxed) as f64)
-                    }
-                }
+                ctx.incr_throughput(bts.len());
                 rate_limit.wait(bts.len()).await;
                 let pkt = Ipv4Packet::new(&bts).expect("don't send me invalid IPv4 packets!");
                 assert_eq!(pkt.get_destination(), addr);
@@ -148,7 +122,7 @@ pub async fn handle_vpn_session(
             }
         })
     };
-    let mut stat_count = 0u64;
+
     loop {
         let bts = mux.recv_urel().await?;
         on_activity();
@@ -166,62 +140,66 @@ pub async fn handle_vpn_session(
                 .await?;
             }
             VpnMessage::Payload(bts) => {
-                if let Some(stat_client) = ctx.stat_client.as_ref() {
-                    stat_count += bts.len() as u64;
-                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        stat_client.count(&stat_key, stat_count as f64);
-                        stat_count = 0;
-                    }
-                }
-                let pkt = Ipv4Packet::new(&bts);
-                if let Some(pkt) = pkt {
-                    // source must be correct and destination must not be banned
-                    if pkt.get_source() != assigned_ip.addr()
-                        || pkt.get_destination().is_loopback()
-                        || pkt.get_destination().is_private()
-                        || pkt.get_destination().is_unspecified()
-                        || pkt.get_destination().is_broadcast()
-                    {
-                        continue;
-                    }
-                    // must not be blacklisted
-                    let port = {
-                        match pkt.get_next_level_protocol() {
-                            IpNextHeaderProtocols::Tcp => {
-                                TcpPacket::new(pkt.payload()).map(|v| v.get_destination())
-                            }
-                            IpNextHeaderProtocols::Udp => {
-                                UdpPacket::new(pkt.payload()).map(|v| v.get_destination())
-                            }
-                            _ => None,
-                        }
-                    };
-                    if let Some(port) = port {
-                        // Block QUIC due to it performing badly over sosistab etc
-                        if pkt.get_next_level_protocol() == IpNextHeaderProtocols::Udp
-                            && port == 443
-                        {
-                            continue;
-                        }
-                        if crate::lists::BLACK_PORTS.contains(&port) {
-                            continue;
-                        }
-                        if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&port)
-                        {
-                            continue;
-                        }
-                    }
-                    RAW_TUN_WRITE(&bts);
-                }
+                vpn_send_up(&ctx, assigned_ip.addr(), &bts).await;
             }
             _ => anyhow::bail!("message in invalid context"),
         }
     }
 }
 
+/// Subscribes to downstream packets
+pub fn vpn_subscribe_down(addr: Ipv4Addr) -> Receiver<Bytes> {
+    let (send_down, recv_down) = smol::channel::bounded(1000);
+    INCOMING_MAP.insert(addr, send_down);
+    recv_down
+}
+
+/// Writes a raw, upacket
+pub async fn vpn_send_up(ctx: &RootCtx, assigned_ip: Ipv4Addr, bts: &[u8]) {
+    ctx.incr_throughput(bts.len());
+    let pkt = Ipv4Packet::new(bts);
+    if let Some(pkt) = pkt {
+        // source must be correct and destination must not be banned
+        if pkt.get_source() != assigned_ip
+            || pkt.get_destination().is_loopback()
+            || pkt.get_destination().is_private()
+            || pkt.get_destination().is_unspecified()
+            || pkt.get_destination().is_broadcast()
+        {
+            return;
+        }
+        // must not be blacklisted
+        let port = {
+            match pkt.get_next_level_protocol() {
+                IpNextHeaderProtocols::Tcp => {
+                    TcpPacket::new(pkt.payload()).map(|v| v.get_destination())
+                }
+                IpNextHeaderProtocols::Udp => {
+                    UdpPacket::new(pkt.payload()).map(|v| v.get_destination())
+                }
+                _ => None,
+            }
+        };
+        if let Some(port) = port {
+            // Block QUIC due to it performing badly over sosistab etc
+            if pkt.get_next_level_protocol() == IpNextHeaderProtocols::Udp && port == 443 {
+                return;
+            }
+            if crate::lists::BLACK_PORTS.contains(&port) {
+                return;
+            }
+            if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&port) {
+                return;
+            }
+        }
+        RAW_TUN_WRITE(bts);
+        smol::future::yield_now().await;
+    }
+}
+
 /// Mapping for incoming packets
 #[allow(clippy::type_complexity)]
-static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Buff>>> =
+static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Bytes>>> =
     Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
 
 /// The raw TUN device.
@@ -255,7 +233,7 @@ static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::n
                     let dest =
                         Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
                     if let Some(Some(dest)) = dest {
-                        if let Err(err) = dest.try_send(pkt.into()) {
+                        if let Err(err) = dest.try_send(Bytes::copy_from_slice(pkt)) {
                             log::trace!("error forwarding packet obtained from tun: {:?}", err);
                         }
                     }

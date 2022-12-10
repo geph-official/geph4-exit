@@ -56,6 +56,8 @@ pub struct RootCtx {
     // pub google_proxy: Option<SocketAddr>,
     pub sess_replacers: DashMap<[u8; 32], Sender<Session>>,
     pub kill_event: Event,
+
+    stat_count: AtomicU64,
 }
 
 impl From<Config> for RootCtx {
@@ -144,11 +146,23 @@ impl From<Config> for RootCtx {
 
             sess_replacers: Default::default(),
             kill_event: Event::new(),
+            stat_count: AtomicU64::new(0),
         }
     }
 }
 
 impl RootCtx {
+    pub fn incr_throughput(&self, delta: usize) {
+        let curr = self.stat_count.fetch_add(delta as u64, Ordering::Relaxed);
+        if curr > 1_000_000 {
+            if let Some(client) = self.stat_client.as_ref() {
+                let curr = self.stat_count.swap(0, Ordering::Relaxed);
+                let stat_key = format!("exit_usage.{}", self.exit_hostname_dashed());
+                client.count(&stat_key, curr as f64);
+            }
+        }
+    }
+
     pub fn exit_hostname_dashed(&self) -> String {
         self.config
             .official()
