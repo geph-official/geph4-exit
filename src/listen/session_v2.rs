@@ -1,7 +1,7 @@
 use async_trait::async_trait;
 use futures_util::{AsyncReadExt, AsyncWriteExt, TryFutureExt};
 use geph4_protocol::{
-    binder::protocol::BlindToken,
+    binder::protocol::{BlindToken, Level},
     client_exit::{ClientExitProtocol, ClientExitService, ClientTelemetry, CLIENT_EXIT_PSEUDOHOST},
 };
 use moka::sync::Cache;
@@ -14,7 +14,7 @@ use smol::{
     Task,
 };
 
-use sosistab2::{MuxStream};
+use sosistab2::MuxStream;
 
 use std::{
     sync::{
@@ -99,9 +99,20 @@ async fn handle_conn(
     }
 
     // MAIN STUFF HERE
+    let limiter = if client_exit.0.is_plus() {
+        RateLimiter::unlimited()
+    } else {
+        RateLimiter::new(
+            ctx.config
+                .official()
+                .as_ref()
+                .and_then(|off| *off.free_limit())
+                .unwrap_or(125),
+        )
+    };
     proxy_loop(
         ctx,
-        RateLimiter::unlimited().into(),
+        limiter.into(),
         stream.clone(),
         sess_random,
         hostname.into(),
@@ -132,14 +143,37 @@ impl ClientExitImpl {
     pub fn authed(&self) -> bool {
         self.authed.load(Ordering::SeqCst)
     }
+
+    /// Checks whether or not this is Plus.
+    pub fn is_plus(&self) -> bool {
+        self.is_plus.load(Ordering::SeqCst)
+    }
 }
 
 #[async_trait]
 impl ClientExitProtocol for ClientExitImpl {
-    async fn validate(&self, _token: BlindToken) -> bool {
-        // TODO
-        self.authed.store(true, Ordering::SeqCst);
-        true
+    async fn validate(&self, token: BlindToken) -> bool {
+        // fail-open
+        let fallible = async {
+            if let Some(client) = self.ctx.binder_client.as_ref() {
+                anyhow::Ok(client.validate(token.clone()).await?)
+            } else {
+                anyhow::Ok(true)
+            }
+        };
+        match fallible.await {
+            Ok(val) => {
+                if token.level == Level::Plus {
+                    self.is_plus.store(true, Ordering::SeqCst);
+                }
+                self.authed.store(val, Ordering::SeqCst);
+                val
+            }
+            Err(_) => {
+                self.authed.store(true, Ordering::SeqCst);
+                true
+            }
+        }
     }
 
     async fn telemetry_heartbeat(&self, _tele: ClientTelemetry) {}
