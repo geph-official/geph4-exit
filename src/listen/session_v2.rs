@@ -39,7 +39,9 @@ pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
             .build()
     });
     let key = blake3::hash(pipe.peer_metadata().as_bytes());
+    log::debug!("sesh: {}", key);
     let (mplex, _) = BIG_MULTIPLEX_TABLE.get_with(key, || {
+        log::debug!("sesh MISS: {}", key);
         // TODO actually put this SK somewhere
         let mplex = Arc::new(sosistab2::Multiplex::new(ctx.sosistab2_sk.clone(), None));
         let task = smolscale::spawn(handle_session_v2(ctx.clone(), mplex.clone()));
