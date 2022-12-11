@@ -117,9 +117,20 @@ async fn handle_conn(
                     let downstream = vpn_subscribe_down(vpn_ipv4);
 
                     let send_loop = async {
+                        let mut buff = vec![];
                         loop {
+                            buff.clear();
                             let next = downstream.recv().await?;
-                            vpn_stream.send_urel(next).await?;
+                            buff.push(next);
+                            while let Ok(next) = downstream.try_recv() {
+                                buff.push(next);
+                                if buff.len() >= 20 {
+                                    break;
+                                }
+                            }
+                            vpn_stream
+                                .send_urel(stdcode::serialize(&buff)?.into())
+                                .await?;
                         }
                     };
                     let recv_loop = async {
