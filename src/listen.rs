@@ -479,5 +479,8 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     };
 
     // race
-    control_prot_fut.or(gauge_fut).or(pipe_listen_fut).await
+    smol::future::race(control_prot_fut, self_bridge_fut)
+        .or(gauge_fut)
+        .or(pipe_listen_fut)
+        .await
 }
