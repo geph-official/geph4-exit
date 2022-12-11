@@ -1,5 +1,6 @@
 use anyhow::Context;
 use async_trait::async_trait;
+use bytes::Bytes;
 use dashmap::DashMap;
 use futures_util::{AsyncReadExt, AsyncWriteExt, TryFutureExt};
 use geph4_protocol::{
@@ -136,7 +137,10 @@ async fn handle_conn(
                     let recv_loop = async {
                         loop {
                             let next = vpn_stream.recv_urel().await?;
-                            vpn_send_up(&ctx, vpn_ipv4, &next).await;
+                            let next: Vec<Bytes> = stdcode::deserialize(&next)?;
+                            for next in next {
+                                vpn_send_up(&ctx, vpn_ipv4, &next).await;
+                            }
                         }
                     };
                     send_loop.race(recv_loop).await
