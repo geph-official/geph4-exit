@@ -324,7 +324,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .bridge_secret()
                     .as_bytes(),
             );
-            let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await?;
+            let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await.unwrap();
             log::info!("starting bridge exit listener");
             serve_bridge_exit(
                 socket,
@@ -334,6 +334,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             .await?;
             Ok(())
         } else {
+            log::info!("NOT starting bridge exit listener");
             smol::future::pending().await
         }
     };
