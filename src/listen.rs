@@ -325,6 +325,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .as_bytes(),
             );
             let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await?;
+            log::info!("starting bridge exit listener");
             serve_bridge_exit(
                 socket,
                 *secret.as_bytes(),
