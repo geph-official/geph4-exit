@@ -35,10 +35,10 @@ pub struct RateLimiter {
 }
 
 impl RateLimiter {
-    /// Creates a new rate limiter with the given speed limit, in KB/s
+    /// Creates a new rate limiter with the given speed limit, in KB/s/panic
     pub fn new(l: u32) -> Self {
-        let limit = NonZeroU32::new(l * 1024).unwrap();
-        let burst_size = NonZeroU32::new(l * 1024 * 10).unwrap();
+        let limit = NonZeroU32::new((l + 1) * 1024).unwrap();
+        let burst_size = NonZeroU32::new((l + 1) * 1024 * 10).unwrap();
         // 10-second buffer
         let inner = governor::RateLimiter::new(
             Quota::per_second(limit).allow_burst(burst_size),
