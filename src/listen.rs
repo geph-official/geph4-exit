@@ -315,6 +315,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     // future that governs the control protocol
     let control_prot_fut = async {
         if ctx.config.official().is_some() {
+            panic!("ENTERED");
             let ctx = ctx.clone();
             let secret = blake3::hash(
                 ctx.config
