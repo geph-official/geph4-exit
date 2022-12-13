@@ -1805,6 +1805,7 @@ name = "geph4-exit"
 version = "0.5.0"
 dependencies = [
  "anyhow",
+ "arrayref",
  "async-dup",
  "async-recursion",
  "async-trait",

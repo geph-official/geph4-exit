@@ -58,6 +58,11 @@ pub struct Config {
     #[getset(get = "pub")]
     asn_sniproxies: Option<BTreeMap<String, SocketAddr>>,
 
+    /// Speed limit, in KB/s, for each token.
+    #[getset(get = "pub")]
+    #[serde(default = "all_limit_default")]
+    all_limit: u32,
+
     /// Where to listen to for incoming *direct* sosistab connections.
     #[getset(get = "pub")]
     #[serde(default = "sosistab_listen_default")]
@@ -76,6 +81,10 @@ pub struct Config {
     #[getset(get_copy = "pub")]
     #[serde(default = "conn_count_limit_default")]
     conn_count_limit: usize,
+}
+
+fn all_limit_default() -> u32 {
+    3750
 }
 
 fn sosistab_listen_default() -> String {

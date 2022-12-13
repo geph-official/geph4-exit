@@ -1,4 +1,5 @@
 use anyhow::Context;
+use arrayref::array_ref;
 use async_trait::async_trait;
 use bytes::Bytes;
 use dashmap::DashMap;
@@ -21,11 +22,12 @@ use smol::{
 use smol_timeout::TimeoutExt;
 use smolscale::reaper::TaskReaper;
 use sosistab2::MuxStream;
+use stdcode::StdcodeSerializeExt;
 
 use std::{
     net::Ipv4Addr,
     sync::{
-        atomic::{AtomicBool, Ordering},
+        atomic::{AtomicBool, AtomicU64, Ordering},
         Arc, Weak,
     },
     time::Duration,
@@ -163,20 +165,21 @@ async fn handle_conn(
         return Ok(());
     }
     // check auth
-    if !client_exit.0.authed() {
+    if client_exit.0.authed().is_none() {
         anyhow::bail!("not authed yet, cannot do anything")
     }
 
     // MAIN STUFF HERE
     let limiter = if client_exit.0.is_plus() {
-        RateLimiter::unlimited()
+        ctx.get_ratelimit(client_exit.0.authed().unwrap())
     } else {
         RateLimiter::new(
             ctx.config
                 .official()
                 .as_ref()
                 .and_then(|off| *off.free_limit())
-                .unwrap_or(125),
+                .unwrap_or(0),
+            100,
         )
     };
     proxy_loop(
@@ -195,7 +198,7 @@ async fn handle_conn(
 struct ClientExitImpl {
     ctx: Arc<RootCtx>,
     is_plus: AtomicBool,
-    authed: AtomicBool,
+    authed: AtomicU64,
     vpn_ipv4: Option<Ipv4Addr>,
 }
 
@@ -205,14 +208,19 @@ impl ClientExitImpl {
         Self {
             ctx,
             is_plus: AtomicBool::new(false),
-            authed: AtomicBool::new(true), // FIX LATER
+            authed: AtomicU64::new(0), // FIX LATER
             vpn_ipv4,
         }
     }
 
     /// Checks whether or not the authentication has completed.
-    pub fn authed(&self) -> bool {
-        self.authed.load(Ordering::SeqCst)
+    pub fn authed(&self) -> Option<u64> {
+        let out = self.authed.load(Ordering::SeqCst);
+        if out > 0 {
+            Some(out)
+        } else {
+            None
+        }
     }
 
     /// Checks whether or not this is Plus.
@@ -232,16 +240,18 @@ impl ClientExitProtocol for ClientExitImpl {
                 anyhow::Ok(true)
             }
         };
+        let h = blake3::hash(&token.stdcode());
+        let token_id = u64::from_le_bytes(*array_ref![h.as_bytes(), 0, 8]);
         match fallible.await {
             Ok(val) => {
                 if token.level == Level::Plus {
                     self.is_plus.store(true, Ordering::SeqCst);
                 }
-                self.authed.store(val, Ordering::SeqCst);
+                self.authed.store(token_id, Ordering::SeqCst);
                 val
             }
             Err(_) => {
-                self.authed.store(true, Ordering::SeqCst);
+                self.authed.store(token_id, Ordering::SeqCst);
                 true
             }
         }

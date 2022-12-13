@@ -49,10 +49,10 @@ pub async fn handle_session_legacy(ctx: SessCtx) {
                 if free_limit == 0 {
                     anyhow::bail!("not accepting free users here")
                 } else {
-                    RateLimiter::new(free_limit)
+                    RateLimiter::new(free_limit, free_limit / 8)
                 }
             } else {
-                RateLimiter::new(12500)
+                RateLimiter::new(12500, 12500 / 8)
             }
         } else {
             RateLimiter::unlimited()

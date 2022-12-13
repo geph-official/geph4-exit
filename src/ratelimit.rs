@@ -1,4 +1,8 @@
-use std::{num::NonZeroU32, ops::Deref, sync::atomic::AtomicU64};
+use std::{
+    num::NonZeroU32,
+    ops::Deref,
+    sync::{atomic::AtomicU64, Arc},
+};
 
 use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
@@ -21,45 +25,48 @@ pub static STAT_LIMITER: Lazy<
 
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
 
-static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(80_000));
+static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(80_000, 80_000));
 
 /// A generic rate limiter.
+#[derive(Clone)]
 pub struct RateLimiter {
-    inner: governor::RateLimiter<
-        NotKeyed,
-        governor::state::InMemoryState,
-        governor::clock::MonotonicClock,
+    inner: Arc<
+        governor::RateLimiter<
+            NotKeyed,
+            governor::state::InMemoryState,
+            governor::clock::MonotonicClock,
+        >,
     >,
     unlimited: bool,
     limit: u32,
 }
 
 impl RateLimiter {
-    /// Creates a new rate limiter with the given speed limit, in KB/s/panic
-    pub fn new(l: u32) -> Self {
-        let limit = NonZeroU32::new((l + 1) * 1024).unwrap();
-        let burst_size = NonZeroU32::new((l + 1) * 1024 * 10).unwrap();
+    /// Creates a new rate limiter with the given speed limit, in KB/s
+    pub fn new(limit_kb: u32, burst_kb: u32) -> Self {
+        let limit = NonZeroU32::new((limit_kb + 1) * 1024).unwrap();
+        let burst_size = NonZeroU32::new(burst_kb * 1024).unwrap();
         // 10-second buffer
-        let inner = governor::RateLimiter::new(
+        let inner = Arc::new(governor::RateLimiter::new(
             Quota::per_second(limit).allow_burst(burst_size),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
-        );
+        ));
         inner.check_n(burst_size).expect("this should never happen");
         Self {
             inner,
             unlimited: false,
-            limit: l,
+            limit: limit_kb,
         }
     }
 
     /// Creates a new unlimited ratelimit.
     pub fn unlimited() -> Self {
-        let inner = governor::RateLimiter::new(
+        let inner = Arc::new(governor::RateLimiter::new(
             Quota::per_second(NonZeroU32::new(128 * 1024).unwrap()),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
-        );
+        ));
         Self {
             inner,
             unlimited: true,

@@ -7,7 +7,12 @@ use std::{
     time::{Duration, Instant, SystemTime},
 };
 
-use crate::{asn::MY_PUBLIC_IP, config::Config, ratelimit::STAT_LIMITER, vpn};
+use crate::{
+    asn::MY_PUBLIC_IP,
+    config::Config,
+    ratelimit::{RateLimiter, STAT_LIMITER},
+    vpn,
+};
 use bytes::Bytes;
 use ed25519_dalek::{ed25519::signature::Signature, Signer};
 use event_listener::Event;
@@ -21,6 +26,7 @@ use geph4_protocol::{
     bridge_exit::serve_bridge_exit,
 };
 
+use moka::sync::Cache;
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
 
 use sosistab::Session;
@@ -56,6 +62,8 @@ pub struct RootCtx {
     // pub google_proxy: Option<SocketAddr>,
     pub sess_replacers: DashMap<[u8; 32], Sender<Session>>,
     pub kill_event: Event,
+
+    mass_ratelimits: Cache<u64, RateLimiter>,
 
     stat_count: AtomicU64,
 }
@@ -147,6 +155,10 @@ impl From<Config> for RootCtx {
             sess_replacers: Default::default(),
             kill_event: Event::new(),
             stat_count: AtomicU64::new(0),
+
+            mass_ratelimits: Cache::builder()
+                .time_to_idle(Duration::from_secs(86400))
+                .build(),
         }
     }
 }
@@ -178,6 +190,12 @@ impl RootCtx {
             .as_ref()
             .map(|official| official.exit_hostname().to_owned())
             .unwrap_or_default()
+    }
+
+    pub fn get_ratelimit(&self, key: u64) -> RateLimiter {
+        let limit = *self.config.all_limit();
+        self.mass_ratelimits
+            .get_with(key, || RateLimiter::new(limit, limit * 10000))
     }
 
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {
