@@ -170,18 +170,7 @@ async fn handle_conn(
     }
 
     // MAIN STUFF HERE
-    let limiter = if client_exit.0.is_plus() {
-        ctx.get_ratelimit(client_exit.0.authed().unwrap())
-    } else {
-        RateLimiter::new(
-            ctx.config
-                .official()
-                .as_ref()
-                .and_then(|off| *off.free_limit())
-                .unwrap_or(0),
-            100,
-        )
-    };
+    let limiter = client_exit.0.limiter();
     proxy_loop(
         ctx,
         limiter.into(),
@@ -210,6 +199,23 @@ impl ClientExitImpl {
             is_plus: AtomicBool::new(false),
             authed: AtomicU64::new(0), // FIX LATER
             vpn_ipv4,
+        }
+    }
+
+    /// Gets the ratelimit
+    pub fn limiter(&self) -> RateLimiter {
+        if self.is_plus() {
+            self.ctx.get_ratelimit(self.authed().unwrap())
+        } else {
+            RateLimiter::new(
+                self.ctx
+                    .config
+                    .official()
+                    .as_ref()
+                    .and_then(|off| *off.free_limit())
+                    .unwrap_or(0),
+                100,
+            )
         }
     }
 
