@@ -116,6 +116,7 @@ async fn handle_conn(
             smolscale::spawn::<anyhow::Result<()>>(async move {
                 vpn_stream.recv_urel().await?;
                 if start_vpn {
+                    let limiter = client_exit.0.limiter();
                     let vpn_ipv4 = client_exit.0.get_vpn_ipv4().await.unwrap();
                     let downstream = vpn_subscribe_down(vpn_ipv4);
 
@@ -131,6 +132,9 @@ async fn handle_conn(
                                     break;
                                 }
                             }
+                            for next in buff.iter() {
+                                limiter.wait(next.len()).await;
+                            }
                             vpn_stream
                                 .send_urel(stdcode::serialize(&buff)?.into())
                                 .await?;
@@ -141,6 +145,7 @@ async fn handle_conn(
                             let next = vpn_stream.recv_urel().await?;
                             let next: Vec<Bytes> = stdcode::deserialize(&next)?;
                             for next in next {
+                                limiter.wait(next.len()).await;
                                 vpn_send_up(&ctx, vpn_ipv4, &next).await;
                             }
                         }
