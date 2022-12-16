@@ -11,11 +11,12 @@ use geph4_protocol::{
     bridge_exit::{BridgeExitProtocol, LegacyProtocol},
 };
 use moka::sync::Cache;
+use native_tls::TlsAcceptor;
 use rand::prelude::*;
 
 use smol::prelude::*;
 use smol_str::SmolStr;
-use sosistab2::{ObfsUdpListener, ObfsUdpSecret};
+use sosistab2::{ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
 
 use std::{
     convert::Infallible,
@@ -58,6 +59,35 @@ impl ControlService {
     }
 }
 
+fn dummy_tls_config() -> TlsAcceptor {
+    let cert = rcgen::generate_simple_self_signed(vec!["helloworld.com".to_string()]).unwrap();
+    let cert_pem = cert.serialize_pem().unwrap();
+    let cert_key = cert.serialize_private_key_pem();
+    let identity = native_tls::Identity::from_pkcs8(cert_pem.as_bytes(), cert_key.as_bytes())
+        .expect("wtf cannot decode id???");
+    native_tls::TlsAcceptor::new(identity).unwrap()
+}
+
+async fn forward_and_upload(
+    ctx: Arc<RootCtx>,
+    listener: impl PipeListener + Send + Sync + 'static,
+    bd_template: BridgeDescriptor,
+) -> Infallible {
+    let _forwarder = {
+        let ctx = ctx.clone();
+        smolscale::spawn(async move {
+            loop {
+                let pipe = listener
+                    .accept_pipe()
+                    .await
+                    .expect("oh no how did this happen");
+                handle_pipe_v2(ctx.clone(), pipe);
+            }
+        })
+    };
+    binder_upload_loop(ctx.clone(), bd_template).await
+}
+
 #[async_trait]
 impl BridgeExitProtocol for ControlService {
     async fn advertise_raw_v2(
@@ -67,6 +97,57 @@ impl BridgeExitProtocol for ControlService {
         bridge_group: SmolStr,
     ) -> SocketAddr {
         match protocol.as_str() {
+            "sosistab2-obfstls" => {
+                // Placeholder, UNAUTHENTICATED rcgen-based solution
+                if let Some((addr, _)) = self.v2_obfstls_listeners.get(&bridge_addr) {
+                    return addr;
+                };
+                let (addr, listener, cookie) = loop {
+                    let addr: SocketAddr =
+                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
+                            .parse()
+                            .unwrap();
+                    let mut key = [0; 32];
+                    rand::thread_rng().fill_bytes(&mut key);
+                    match ObfsTlsListener::bind(
+                        addr,
+                        dummy_tls_config(),
+                        Bytes::copy_from_slice(&key),
+                    )
+                    .await
+                    {
+                        Ok(listener) => break (addr, listener, Bytes::copy_from_slice(&key)),
+                        Err(_err) => {
+                            log::warn!("cannot bind to {}", addr);
+                        }
+                    }
+                };
+                let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), addr.port());
+                let ctx = self.ctx.clone();
+                self.v2_obfstls_listeners.insert(
+                    bridge_addr,
+                    (
+                        my_addr,
+                        smolscale::spawn(forward_and_upload(
+                            ctx.clone(),
+                            listener,
+                            BridgeDescriptor {
+                                is_direct: false,
+                                protocol: "sosistab2-obfstls".into(),
+                                endpoint: bridge_addr,
+                                sosistab_key: cookie,
+                                exit_hostname: ctx.exit_hostname().into(),
+                                alloc_group: bridge_group,
+                                update_time: 0,
+                                exit_signature: Bytes::new(),
+                            },
+                        ))
+                        .into(),
+                    ),
+                );
+
+                my_addr
+            }
             "sosistab2-obfsudp" => {
                 if let Some((addr, _)) = self.v2_obfsudp_listeners.get(&bridge_addr) {
                     return addr;
@@ -91,39 +172,25 @@ impl BridgeExitProtocol for ControlService {
                     bridge_addr,
                     (
                         my_addr,
-                        smolscale::spawn(async move {
-                            let _forwarder = {
-                                let ctx = ctx.clone();
-                                smolscale::spawn(async move {
-                                    loop {
-                                        let pipe = listener
-                                            .accept()
-                                            .await
-                                            .expect("oh no how did this happen");
-                                        handle_pipe_v2(ctx.clone(), pipe);
-                                    }
-                                })
-                            };
-                            binder_upload_loop(
-                                ctx.clone(),
-                                BridgeDescriptor {
-                                    is_direct: false,
-                                    protocol: "sosistab2-obfsudp".into(),
-                                    endpoint: bridge_addr,
-                                    sosistab_key: bincode::serialize(&(
-                                        key,
-                                        ctx.sosistab2_sk.to_public(),
-                                    ))
-                                    .unwrap()
-                                    .into(),
-                                    exit_hostname: ctx.exit_hostname().into(),
-                                    alloc_group: bridge_group,
-                                    update_time: 0,
-                                    exit_signature: Bytes::new(),
-                                },
-                            )
-                            .await
-                        })
+                        smolscale::spawn(forward_and_upload(
+                            ctx.clone(),
+                            listener,
+                            BridgeDescriptor {
+                                is_direct: false,
+                                protocol: "sosistab2-obfsudp".into(),
+                                endpoint: bridge_addr,
+                                sosistab_key: bincode::serialize(&(
+                                    key,
+                                    ctx.sosistab2_sk.to_public(),
+                                ))
+                                .unwrap()
+                                .into(),
+                                exit_hostname: ctx.exit_hostname().into(),
+                                alloc_group: bridge_group,
+                                update_time: 0,
+                                exit_signature: Bytes::new(),
+                            },
+                        ))
                         .into(),
                     ),
                 );
