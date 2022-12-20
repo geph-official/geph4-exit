@@ -25,7 +25,7 @@ pub static STAT_LIMITER: Lazy<
 
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
 
-static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(80_000, 80_000));
+static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(90_000, 90_000));
 
 /// A generic rate limiter.
 #[derive(Clone)]
