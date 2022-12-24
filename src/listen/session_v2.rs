@@ -219,7 +219,7 @@ impl ClientExitImpl {
                     .as_ref()
                     .and_then(|off| *off.free_limit())
                     .unwrap_or(0),
-                100,
+                1000,
                 GLOBAL_RATE_LIMIT.clone().into(),
             )
         }
