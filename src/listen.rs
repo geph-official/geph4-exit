@@ -10,7 +10,7 @@ use std::{
 use crate::{
     asn::MY_PUBLIC_IP,
     config::Config,
-    ratelimit::{RateLimiter, STAT_LIMITER},
+    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT, STAT_LIMITER},
     vpn,
 };
 use bytes::Bytes;
@@ -194,8 +194,9 @@ impl RootCtx {
 
     pub fn get_ratelimit(&self, key: u64) -> RateLimiter {
         let limit = *self.config.all_limit();
-        self.mass_ratelimits
-            .get_with(key, || RateLimiter::new(limit, limit * 10000))
+        self.mass_ratelimits.get_with(key, || {
+            RateLimiter::new(limit, limit * 10000, GLOBAL_RATE_LIMIT.clone().into())
+        })
     }
 
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {

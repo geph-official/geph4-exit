@@ -1,12 +1,16 @@
 use std::{
     num::NonZeroU32,
-    ops::Deref,
-    sync::{atomic::AtomicU64, Arc},
+    sync::{
+        atomic::{AtomicU64, Ordering},
+        Arc,
+    },
+    time::Instant,
 };
 
 use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use once_cell::sync::Lazy;
+use priority_async_mutex::PriorityMutex;
 
 pub static STAT_LIMITER: Lazy<
     governor::RateLimiter<
@@ -25,52 +29,64 @@ pub static STAT_LIMITER: Lazy<
 
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
 
-static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> = Lazy::new(|| RateLimiter::new(90_000, 90_000));
+pub static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> =
+    Lazy::new(|| RateLimiter::new(90_000, 90_000, None));
 
 /// A generic rate limiter.
 #[derive(Clone)]
 pub struct RateLimiter {
     inner: Arc<
-        governor::RateLimiter<
-            NotKeyed,
-            governor::state::InMemoryState,
-            governor::clock::MonotonicClock,
+        PriorityMutex<
+            governor::RateLimiter<
+                NotKeyed,
+                governor::state::InMemoryState,
+                governor::clock::MonotonicClock,
+            >,
         >,
     >,
     unlimited: bool,
     limit: u32,
+
+    parent: Option<Box<RateLimiter>>,
+    priority: Arc<AtomicU64>,
+    start: Instant,
 }
 
 impl RateLimiter {
     /// Creates a new rate limiter with the given speed limit, in KB/s
-    pub fn new(limit_kb: u32, burst_kb: u32) -> Self {
+    pub fn new(limit_kb: u32, burst_kb: u32, parent: Option<RateLimiter>) -> Self {
         let limit = NonZeroU32::new((limit_kb + 1) * 1024).unwrap();
         let burst_size = NonZeroU32::new(burst_kb * 1024).unwrap();
-        // 10-second buffer
-        let inner = Arc::new(governor::RateLimiter::new(
+        let inner = governor::RateLimiter::new(
             Quota::per_second(limit).allow_burst(burst_size),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
-        ));
+        );
         inner.check_n(burst_size).expect("this should never happen");
         Self {
-            inner,
+            inner: Arc::new(PriorityMutex::new(inner)),
             unlimited: false,
             limit: limit_kb,
+            parent: parent.map(Box::new),
+            priority: AtomicU64::new(0).into(),
+            start: Instant::now(),
         }
     }
 
     /// Creates a new unlimited ratelimit.
-    pub fn unlimited() -> Self {
-        let inner = Arc::new(governor::RateLimiter::new(
+    pub fn unlimited(parent: Option<RateLimiter>) -> Self {
+        let inner = Arc::new(PriorityMutex::new(governor::RateLimiter::new(
             Quota::per_second(NonZeroU32::new(128 * 1024).unwrap()),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
-        ));
+        )));
         Self {
             inner,
             unlimited: true,
             limit: u32::MAX,
+            parent: parent.map(Box::new),
+            priority: AtomicU64::new(0).into(),
+            start: Instant::now(),
         }
     }
 
@@ -85,18 +101,31 @@ impl RateLimiter {
     }
 
     /// Waits until the given number of bytes can be let through.
-    #[async_recursion]
     pub async fn wait(&self, bytes: usize) {
+        let priority_raw = self.priority.load(Ordering::Relaxed) as f64;
+        let priority = (priority_raw / self.start.elapsed().as_secs_f64()).sqrt() as u32;
+        self.wait_priority(bytes, if self.unlimited { 0 } else { priority })
+            .await;
+    }
+
+    #[async_recursion]
+    async fn wait_priority(&self, bytes: usize, priority: u32) {
+        if let Some(v) = &self.parent {
+            v.wait_priority(bytes, priority).await;
+        }
         if bytes == 0 || self.unlimited {
             return;
         }
-        if (self as *const _) != (GLOBAL_RATE_LIMIT.deref() as *const _) {
-            GLOBAL_RATE_LIMIT.wait(bytes).await;
-        }
         let bytes = NonZeroU32::new(bytes as u32).unwrap();
-        while let Err(err) = self.inner.check_n(bytes) {
+        let inner = self.inner.lock(priority).await;
+        while let Err(err) = inner.check_n(bytes) {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {
+                    self.priority
+                        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+                            Some(x.saturating_add(1))
+                        })
+                        .unwrap();
                     smol::Timer::at(until.earliest_possible()).await;
                 }
                 NegativeMultiDecision::InsufficientCapacity(_) => {
@@ -104,5 +133,10 @@ impl RateLimiter {
                 }
             }
         }
+        self.priority
+            .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
+                Some(x.saturating_sub(0))
+            })
+            .unwrap();
     }
 }

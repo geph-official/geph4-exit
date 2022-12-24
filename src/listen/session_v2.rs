@@ -35,7 +35,7 @@ use std::{
 
 use crate::{
     connect::proxy_loop,
-    ratelimit::RateLimiter,
+    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT},
     vpn::{vpn_send_up, vpn_subscribe_down, IpAddrAssigner},
 };
 
@@ -220,6 +220,7 @@ impl ClientExitImpl {
                     .and_then(|off| *off.free_limit())
                     .unwrap_or(0),
                 100,
+                GLOBAL_RATE_LIMIT.clone().into(),
             )
         }
     }

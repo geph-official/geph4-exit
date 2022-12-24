@@ -28,7 +28,11 @@ use std::{
 };
 use tun::{platform::Device, Device as Device2};
 
-use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
+use crate::{
+    connect::proxy_loop,
+    listen::RootCtx,
+    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT},
+};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
@@ -43,7 +47,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     loop {
         let (client, _) = listener.accept().await.unwrap();
         let ctx = ctx.clone();
-        let rate_limit = Arc::new(RateLimiter::unlimited());
+        let rate_limit = Arc::new(RateLimiter::unlimited(GLOBAL_RATE_LIMIT.clone().into()));
         let conn_task = smolscale::spawn(
             async move {
                 static CLIENT_ID_CACHE: Lazy<Cache<IpAddr, u64>> =

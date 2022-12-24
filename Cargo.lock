@@ -1772,6 +1772,7 @@ dependencies = [
  "os_socketaddr",
  "parking_lot 0.11.2",
  "pnet_packet",
+ "priority-async-mutex",
  "rand 0.7.3",
  "rand_chacha 0.2.2",
  "rangemap",
@@ -2302,6 +2303,7 @@ checksum = "ff50ecb28bb86013e935fb6683ab1f6d3a20016f123c76fd4c27470076ac30f5"
 dependencies = [
  "cfg-if 1.0.0",
  "generator",
+ "pin-utils",
  "scoped-tls",
  "tracing",
  "tracing-subscriber",
@@ -2676,6 +2678,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "86f0b0d4bf799edbc74508c1e8bf170ff5f41238e5f8225603ca7caaae2b7860"
 
 [[package]]
+name = "oneshot"
+version = "0.1.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc22d22931513428ea6cc089e942d38600e3d00976eef8c86de6b8a3aadec6eb"
+dependencies = [
+ "loom",
+]
+
+[[package]]
 name = "opaque-debug"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2953,6 +2964,16 @@ name = "ppv-lite86"
 version = "0.2.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5b40af805b3121feab8a3c29f04d8ad262fa8e0561883e7653e024ae4479e6de"
+
+[[package]]
+name = "priority-async-mutex"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "6072fc466a1755cdfe38b9a49c2bdee0afa06a4712781fcfa36e32112927f5df"
+dependencies = [
+ "oneshot",
+ "simple-mutex",
+]
 
 [[package]]
 name = "priority-queue"
