@@ -195,7 +195,7 @@ impl RootCtx {
     pub fn get_ratelimit(&self, key: u64) -> RateLimiter {
         let limit = *self.config.all_limit();
         self.mass_ratelimits.get_with(key, || {
-            RateLimiter::new(limit, limit * 10000, GLOBAL_RATE_LIMIT.clone().into())
+            RateLimiter::unlimited(GLOBAL_RATE_LIMIT.clone().into())
         })
     }
 
