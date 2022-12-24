@@ -162,7 +162,7 @@ impl From<Config> for RootCtx {
                 .time_to_idle(Duration::from_secs(86400))
                 .build(),
 
-            parent_ratelimit: RateLimiter::new(*cfg.all_limit(), 1000, None),
+            parent_ratelimit: RateLimiter::new(*cfg.all_limit(), *cfg.all_limit(), None),
         }
     }
 }
