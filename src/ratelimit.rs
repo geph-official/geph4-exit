@@ -109,14 +109,14 @@ impl RateLimiter {
     }
 
     #[async_recursion]
-    async fn wait_priority(&self, bytes: usize, priority: u32) {
+    async fn wait_priority(&self, obytes: usize, priority: u32) {
         if let Some(v) = &self.parent {
-            v.wait_priority(bytes, priority).await;
+            v.wait_priority(obytes, priority).await;
         }
-        if bytes == 0 || self.unlimited {
+        if obytes == 0 || self.unlimited {
             return;
         }
-        let bytes = NonZeroU32::new(bytes as u32).unwrap();
+        let bytes = NonZeroU32::new(obytes as u32).unwrap();
         let inner = self.inner.lock(priority).await;
         while let Err(err) = inner.check_n(bytes) {
             match err {
@@ -130,7 +130,7 @@ impl RateLimiter {
         }
         self.priority
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-                Some(x.saturating_add(bytes as u32))
+                Some(x.saturating_add(obytes as u64))
             })
             .unwrap();
     }
