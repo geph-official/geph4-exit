@@ -120,7 +120,7 @@ impl RateLimiter {
         while let Err(err) = self.inner.check_n(bytes) {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {
-                    let delay = rand::thread_rng().gen_range(init_sleep, init_sleep * 2.0);
+                    let delay = rand::thread_rng().gen_range(init_sleep, init_sleep * 2.0 + 1.0);
                     dbg!(delay);
                     smol::Timer::at(
                         until.earliest_possible() + Duration::from_secs_f64(delay / 1000.0),
