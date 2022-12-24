@@ -2244,9 +2244,9 @@ dependencies = [
 
 [[package]]
 name = "libc"
-version = "0.2.138"
+version = "0.2.139"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db6d7e329c562c5dfab7a46a2afabc8b987ab9a4834c9d1ca04dc54c1546cef8"
+checksum = "201de327520df007757c1f0adce6e827fe8562fbc28bfd9c15571c66ca1f5f79"
 
 [[package]]
 name = "libm"
@@ -4089,9 +4089,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7695adccd73f248f6bae0b61ced10740794b1477b531f0bceba716ea49524f3e"
+checksum = "f2564be59015a549a00b4bc40ee4a20532fd438c7347f0617d078d4003c8b589"
 dependencies = [
  "anyhow",
  "arc-swap",
