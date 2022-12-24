@@ -10,7 +10,7 @@ use std::{
 use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use once_cell::sync::Lazy;
-use priority_async_mutex::PriorityMutex;
+
 use rand::Rng;
 
 pub static STAT_LIMITER: Lazy<
@@ -29,9 +29,6 @@ pub static STAT_LIMITER: Lazy<
 });
 
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
-
-pub static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> =
-    Lazy::new(|| RateLimiter::new(40_000, 1000, None));
 
 /// A generic rate limiter.
 #[derive(Clone)]
@@ -121,7 +118,6 @@ impl RateLimiter {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {
                     let delay = rand::thread_rng().gen_range(init_sleep, init_sleep * 2.0 + 1.0);
-                    dbg!(delay);
                     smol::Timer::at(
                         until.earliest_possible() + Duration::from_secs_f64(delay / 1000.0),
                     )

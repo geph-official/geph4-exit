@@ -10,7 +10,7 @@ use std::{
 use crate::{
     asn::MY_PUBLIC_IP,
     config::Config,
-    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT, STAT_LIMITER},
+    ratelimit::{RateLimiter, STAT_LIMITER},
     vpn,
 };
 use bytes::Bytes;
@@ -66,6 +66,8 @@ pub struct RootCtx {
     mass_ratelimits: Cache<u64, RateLimiter>,
 
     stat_count: AtomicU64,
+
+    parent_ratelimit: RateLimiter,
 }
 
 impl From<Config> for RootCtx {
@@ -159,6 +161,8 @@ impl From<Config> for RootCtx {
             mass_ratelimits: Cache::builder()
                 .time_to_idle(Duration::from_secs(86400))
                 .build(),
+
+            parent_ratelimit: RateLimiter::new(*cfg.all_limit(), 1000, None),
         }
     }
 }
@@ -192,11 +196,23 @@ impl RootCtx {
             .unwrap_or_default()
     }
 
-    pub fn get_ratelimit(&self, key: u64) -> RateLimiter {
+    pub fn get_ratelimit(&self, key: u64, free: bool) -> RateLimiter {
         let limit = *self.config.all_limit();
-        self.mass_ratelimits.get_with(key, || {
-            RateLimiter::unlimited(GLOBAL_RATE_LIMIT.clone().into())
-        })
+        if free {
+            self.mass_ratelimits.get_with(key, || {
+                RateLimiter::new(
+                    self.config
+                        .official()
+                        .as_ref()
+                        .and_then(|s| *s.free_limit())
+                        .unwrap_or_default(),
+                    32,
+                    self.parent_ratelimit.clone().into(),
+                )
+            })
+        } else {
+            RateLimiter::unlimited(self.parent_ratelimit.clone().into())
+        }
     }
 
     fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {

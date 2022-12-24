@@ -4,11 +4,7 @@ use std::{
 };
 
 use super::SessCtx;
-use crate::{
-    connect::proxy_loop,
-    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT},
-    vpn::handle_vpn_session,
-};
+use crate::{connect::proxy_loop, vpn::handle_vpn_session};
 
 use futures_util::TryFutureExt;
 use geph4_protocol::binder::protocol::{BinderClient, BlindToken, Level};
@@ -53,13 +49,13 @@ pub async fn handle_session_legacy(ctx: SessCtx) {
                 if free_limit == 0 {
                     anyhow::bail!("not accepting free users here")
                 } else {
-                    RateLimiter::new(free_limit, free_limit / 8, GLOBAL_RATE_LIMIT.clone().into())
+                    root.get_ratelimit(fastrand::u64(..), true)
                 }
             } else {
-                RateLimiter::new(12500, 12500 / 8, GLOBAL_RATE_LIMIT.clone().into())
+                root.get_ratelimit(fastrand::u64(..), false)
             }
         } else {
-            RateLimiter::unlimited(GLOBAL_RATE_LIMIT.clone().into())
+            root.get_ratelimit(fastrand::u64(..), false)
         };
         let rate_limit = Arc::new(rate_limit);
 

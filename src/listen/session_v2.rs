@@ -35,7 +35,7 @@ use std::{
 
 use crate::{
     connect::proxy_loop,
-    ratelimit::{RateLimiter, GLOBAL_RATE_LIMIT},
+    ratelimit::RateLimiter,
     vpn::{vpn_send_up, vpn_subscribe_down, IpAddrAssigner},
 };
 
@@ -210,18 +210,9 @@ impl ClientExitImpl {
     /// Gets the ratelimit
     pub fn limiter(&self) -> RateLimiter {
         if self.is_plus() {
-            self.ctx.get_ratelimit(self.authed().unwrap())
+            self.ctx.get_ratelimit(self.authed().unwrap(), false)
         } else {
-            RateLimiter::new(
-                self.ctx
-                    .config
-                    .official()
-                    .as_ref()
-                    .and_then(|off| *off.free_limit())
-                    .unwrap_or(0),
-                1000,
-                GLOBAL_RATE_LIMIT.clone().into(),
-            )
+            self.ctx.get_ratelimit(self.authed().unwrap(), true)
         }
     }
 
