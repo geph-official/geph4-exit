@@ -4,13 +4,14 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use async_recursion::async_recursion;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use once_cell::sync::Lazy;
 use priority_async_mutex::PriorityMutex;
+use rand::Rng;
 
 pub static STAT_LIMITER: Lazy<
     governor::RateLimiter<
@@ -36,12 +37,10 @@ pub static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> =
 #[derive(Clone)]
 pub struct RateLimiter {
     inner: Arc<
-        PriorityMutex<
-            governor::RateLimiter<
-                NotKeyed,
-                governor::state::InMemoryState,
-                governor::clock::MonotonicClock,
-            >,
+        governor::RateLimiter<
+            NotKeyed,
+            governor::state::InMemoryState,
+            governor::clock::MonotonicClock,
         >,
     >,
     unlimited: bool,
@@ -64,7 +63,7 @@ impl RateLimiter {
         );
         inner.check_n(burst_size).expect("this should never happen");
         Self {
-            inner: Arc::new(PriorityMutex::new(inner)),
+            inner: Arc::new(inner),
             unlimited: false,
             limit: limit_kb,
             parent: parent.map(Box::new),
@@ -75,11 +74,11 @@ impl RateLimiter {
 
     /// Creates a new unlimited ratelimit.
     pub fn unlimited(parent: Option<RateLimiter>) -> Self {
-        let inner = Arc::new(PriorityMutex::new(governor::RateLimiter::new(
+        let inner = Arc::new(governor::RateLimiter::new(
             Quota::per_second(NonZeroU32::new(128 * 1024).unwrap()),
             governor::state::InMemoryState::default(),
             &governor::clock::MonotonicClock::default(),
-        )));
+        ));
         Self {
             inner,
             unlimited: true,
@@ -117,11 +116,17 @@ impl RateLimiter {
             return;
         }
         let bytes = NonZeroU32::new(obytes as u32).unwrap();
-        let inner = self.inner.lock(priority).await;
-        while let Err(err) = inner.check_n(bytes) {
+        let mut init_sleep = priority as f64 / 10.0;
+        while let Err(err) = self.inner.check_n(bytes) {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {
-                    smol::Timer::at(until.earliest_possible()).await;
+                    let delay = rand::thread_rng().gen_range(init_sleep, init_sleep * 2.0);
+                    dbg!(delay);
+                    smol::Timer::at(
+                        until.earliest_possible() + Duration::from_secs_f64(delay / 1000.0),
+                    )
+                    .await;
+                    init_sleep *= 2.0;
                 }
                 NegativeMultiDecision::InsufficientCapacity(_) => {
                     panic!("insufficient capacity in rate limiter")
