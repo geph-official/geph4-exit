@@ -30,7 +30,7 @@ pub static STAT_LIMITER: Lazy<
 pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
 
 pub static GLOBAL_RATE_LIMIT: Lazy<RateLimiter> =
-    Lazy::new(|| RateLimiter::new(70_000, 70_000, None));
+    Lazy::new(|| RateLimiter::new(10_000, 70_000, None));
 
 /// A generic rate limiter.
 #[derive(Clone)]
@@ -121,11 +121,6 @@ impl RateLimiter {
         while let Err(err) = inner.check_n(bytes) {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {
-                    self.priority
-                        .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-                            Some(x.saturating_add(1))
-                        })
-                        .unwrap();
                     smol::Timer::at(until.earliest_possible()).await;
                 }
                 NegativeMultiDecision::InsufficientCapacity(_) => {
@@ -135,7 +130,7 @@ impl RateLimiter {
         }
         self.priority
             .fetch_update(Ordering::Relaxed, Ordering::Relaxed, |x| {
-                Some(x.saturating_sub(0))
+                Some(x.saturating_add(bytes as u32))
             })
             .unwrap();
     }
