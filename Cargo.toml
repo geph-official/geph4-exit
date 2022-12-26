@@ -76,7 +76,7 @@ sysinfo = "0.26.5"
 
 mimalloc = { version = "0.1.30", default-features=false}
 stdcode = "0.1.13"
-sosistab2 = "0.4"
+sosistab2 = "0.5"
 nanorpc = "0.1.12"
 closure = "0.3.0"
 async-recursion = "1.0.0"

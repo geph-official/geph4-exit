@@ -2201,6 +2201,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11b0d96e660696543b251e58030cf9787df56da39dab19ad60eae7353040917e"
 
 [[package]]
+name = "itertools"
+version = "0.10.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b0fd2260e829bddf4cb6ea802289de2f86d6a7a690192fbe91b3f46e0f2c8473"
+dependencies = [
+ "either",
+]
+
+[[package]]
 name = "itoa"
 version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4110,9 +4119,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.4.2"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2564be59015a549a00b4bc40ee4a20532fd438c7347f0617d078d4003c8b589"
+checksum = "179479eaed11fe24c93b641d9b47a64662f2f96e21ac8a50d132119fefbca8c9"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4132,6 +4141,7 @@ dependencies = [
  "futures-util",
  "hex",
  "indexmap",
+ "itertools",
  "log",
  "lru 0.8.1",
  "native-tls",
