@@ -252,11 +252,22 @@ impl BridgeExitProtocol for ControlService {
             log::debug!("b2e hit {bridge_addr} => {exit_addr}");
             exit_addr
         } else {
+            let cookie = *blake3::hash(
+                &(
+                    self.ctx.signing_sk.secret.to_bytes(),
+                    bridge_addr,
+                    protocol,
+                    "tls-cookie-hash-gen-lala",
+                )
+                    .stdcode(),
+            )
+            .as_bytes();
+            let mut rng = rand::rngs::StdRng::from_seed(cookie);
             log::debug!("b2e MISS {bridge_addr}");
-            let sosis_secret = x25519_dalek::StaticSecret::new(rand::thread_rng());
+            let sosis_secret = x25519_dalek::StaticSecret::new(&mut rng);
             let flow_key = bridge_pkt_key(&bridge_group);
-            let to_repeat = || {
-                let a: SocketAddr = format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
+            let mut to_repeat = || {
+                let a: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
                     .parse()
                     .unwrap();
                 let ctx = self.ctx.clone();
