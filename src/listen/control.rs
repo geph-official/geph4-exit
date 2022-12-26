@@ -17,6 +17,7 @@ use rand::prelude::*;
 use smol::prelude::*;
 use smol_str::SmolStr;
 use sosistab2::{ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
+use stdcode::StdcodeSerializeExt;
 
 use std::{
     convert::Infallible,
@@ -102,21 +103,29 @@ impl BridgeExitProtocol for ControlService {
                 if let Some((addr, _)) = self.v2_obfstls_listeners.get(&bridge_addr) {
                     return addr;
                 };
-                let (addr, listener, cookie) = loop {
-                    let addr: SocketAddr =
-                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
-                            .parse()
-                            .unwrap();
-                    let mut key = [0; 32];
-                    rand::thread_rng().fill_bytes(&mut key);
+                let cookie = *blake3::hash(
+                    &(
+                        self.ctx.signing_sk.secret.to_bytes(),
+                        bridge_addr,
+                        protocol,
+                        "tls-cookie-hash-gen-lala",
+                    )
+                        .stdcode(),
+                )
+                .as_bytes();
+                let mut rng = rand::rngs::StdRng::from_seed(cookie);
+                let (addr, listener) = loop {
+                    let addr: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
+                        .parse()
+                        .unwrap();
                     match ObfsTlsListener::bind(
                         addr,
                         dummy_tls_config(),
-                        Bytes::copy_from_slice(&key),
+                        Bytes::copy_from_slice(&cookie),
                     )
                     .await
                     {
-                        Ok(listener) => break (addr, listener, Bytes::copy_from_slice(&key)),
+                        Ok(listener) => break (addr, listener),
                         Err(_err) => {
                             log::warn!("cannot bind to {}", addr);
                         }
@@ -135,7 +144,7 @@ impl BridgeExitProtocol for ControlService {
                                 is_direct: false,
                                 protocol: "sosistab2-obfstls".into(),
                                 endpoint: bridge_addr,
-                                sosistab_key: cookie,
+                                sosistab_key: Bytes::copy_from_slice(&cookie),
                                 exit_hostname: ctx.exit_hostname().into(),
                                 alloc_group: bridge_group,
                                 update_time: 0,
@@ -152,12 +161,30 @@ impl BridgeExitProtocol for ControlService {
                 if let Some((addr, _)) = self.v2_obfsudp_listeners.get(&bridge_addr) {
                     return addr;
                 };
+                // generate a X25519 private key deterministically
+                let secret_key = {
+                    let mut hash = *blake3::hash(
+                        &(
+                            self.ctx.signing_sk.secret.to_bytes(),
+                            bridge_addr,
+                            protocol,
+                            "x25519-hash-gen-lala",
+                        )
+                            .stdcode(),
+                    )
+                    .as_bytes();
+                    // standard x25519 clamping
+                    hash[0] &= 248;
+                    hash[31] &= 127;
+                    hash[31] |= 64;
+                    ObfsUdpSecret::from_bytes(hash)
+                };
+                let mut rng = rand::rngs::StdRng::from_seed(secret_key.to_bytes());
                 // create a listener
                 let (addr, listener, key) = loop {
-                    let addr: SocketAddr =
-                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
-                            .parse()
-                            .unwrap();
+                    let addr: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
+                        .parse()
+                        .unwrap();
                     let key = ObfsUdpSecret::generate();
                     match ObfsUdpListener::bind(addr, key.clone()) {
                         Ok(listener) => break (addr, listener, key.to_public()),
