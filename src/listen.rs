@@ -175,7 +175,7 @@ async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
     let mut sys = System::new_all();
     let mut i = 0.0;
     let target_cpu = 0.1f32;
-    let mut divider = 1.0;
+    let mut divider;
     loop {
         smol::Timer::after(Duration::from_secs(1)).await;
         sys.refresh_all();
@@ -189,7 +189,7 @@ async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
             let p = usage - target_cpu;
             i += p;
             i = i.clamp(-1000.0, 1000.0);
-            divider = (10.0 * p + 0.1 * i).min(1.0);
+            divider = (10.0 * p + 0.1 * i).max(1.0);
             log::info!("CPU divider {divider}, p {p}, i {i}");
             parent_ratelimit.set_divider(divider as f64);
         }
