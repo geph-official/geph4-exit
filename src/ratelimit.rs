@@ -116,6 +116,9 @@ impl RateLimiter {
     #[async_recursion]
     async fn wait_priority(&self, obytes: usize, priority: u32) {
         let divider = self.divider.load(Ordering::Relaxed);
+        if divider > 0 {
+            log::debug!("multiplying {obytes} by {divider}");
+        }
         let obytes = (obytes as f64 * divider) as usize;
         if let Some(v) = &self.parent {
             v.wait_priority(obytes, priority).await;
