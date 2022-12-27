@@ -189,7 +189,7 @@ async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
             i += p;
             i = i.clamp(-1000.0, 1000.0);
             let divider = 10.0 * p + 0.01 * i;
-            log::info!("divider {divider}, p {p}, i {i}");
+            log::info!("CPU divider {divider}, p {p}, i {i}");
             parent_ratelimit.set_divider(divider as f64);
         }
     }
