@@ -449,11 +449,16 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let ctrlkey = format!("control_count.{}", exit_hostname.replace('.', "-"));
         let taskkey = format!("task_count.{}", exit_hostname.replace('.', "-"));
         let hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
+        let cpukey = format!("cpu_usage.{}", exit_hostname.replace('.', "-"));
         let mut sys = System::new_all();
 
         loop {
             sys.refresh_all();
+
             if let Some(stat_client) = ctx.stat_client.as_ref() {
+                let cpus = sys.cpus();
+                let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
+
                 let session_count = ctx.session_count.load(std::sync::atomic::Ordering::Relaxed);
                 stat_client.gauge(&key, session_count as f64);
                 let raw_session_count = ctx
@@ -471,6 +476,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 stat_client.gauge(&taskkey, task_count as f64);
                 stat_client.gauge(&threadkey, thread_count as f64);
                 stat_client.gauge(&hijackkey, ctx.sess_replacers.len() as f64);
+                stat_client.gauge(&cpukey, usage as f64);
             }
             smol::Timer::after(Duration::from_secs(10)).await;
         }
