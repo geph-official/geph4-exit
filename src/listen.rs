@@ -27,11 +27,11 @@ use geph4_protocol::{
 };
 
 use moka::sync::Cache;
-use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*};
+use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*, Task};
 
 use sosistab::Session;
 use sosistab2::{MuxSecret, ObfsUdpListener, ObfsUdpSecret};
-use sysinfo::{System, SystemExt};
+use sysinfo::{CpuExt, System, SystemExt};
 use x25519_dalek::StaticSecret;
 
 use self::{control::ControlService, session_v2::handle_pipe_v2};
@@ -68,6 +68,8 @@ pub struct RootCtx {
     stat_count: AtomicU64,
 
     parent_ratelimit: RateLimiter,
+
+    _task: Task<()>,
 }
 
 impl From<Config> for RootCtx {
@@ -127,6 +129,7 @@ impl From<Config> for RootCtx {
         };
         log::info!("signing_sk = {}", hex::encode(signing_sk.public));
         let sosistab_sk = x25519_dalek::StaticSecret::from(*signing_sk.secret.as_bytes());
+        let parent_ratelimit = RateLimiter::new(*cfg.all_limit(), *cfg.all_limit(), None);
         Self {
             config: cfg.clone(),
             stat_client: cfg.official().as_ref().map(|official| {
@@ -162,7 +165,32 @@ impl From<Config> for RootCtx {
                 .time_to_idle(Duration::from_secs(86400))
                 .build(),
 
-            parent_ratelimit: RateLimiter::new(*cfg.all_limit(), *cfg.all_limit(), None),
+            parent_ratelimit: parent_ratelimit.clone(),
+            _task: smolscale::spawn(set_ratelimit_loop(parent_ratelimit)),
+        }
+    }
+}
+
+async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
+    let mut sys = System::new_all();
+    let mut i = 0.0;
+    let target_cpu = 0.9f32;
+    loop {
+        smol::Timer::after(Duration::from_secs(1)).await;
+        sys.refresh_all();
+        let cpus = sys.cpus();
+        let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
+        log::info!("CPU usage: {:.2}%", usage * 100.0);
+        if usage < 0.7 {
+            i = 0.0;
+            parent_ratelimit.set_divider(1.0);
+        } else {
+            let p = usage - target_cpu;
+            i += p;
+            i = i.clamp(-1000.0, 1000.0);
+            let divider = 10.0 * p + 0.01 * i;
+            log::info!("divider {divider}, p {p}, i {i}");
+            parent_ratelimit.set_divider(divider as f64);
         }
     }
 }

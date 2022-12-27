@@ -1,3 +1,7 @@
+use async_recursion::async_recursion;
+use atomic_float::AtomicF64;
+use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
+use once_cell::sync::Lazy;
 use std::{
     num::NonZeroU32,
     sync::{
@@ -6,10 +10,6 @@ use std::{
     },
     time::{Duration, Instant},
 };
-
-use async_recursion::async_recursion;
-use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
-use once_cell::sync::Lazy;
 
 use rand::Rng;
 
@@ -45,6 +45,7 @@ pub struct RateLimiter {
 
     parent: Option<Box<RateLimiter>>,
     priority: Arc<AtomicU64>,
+    divider: Arc<AtomicF64>,
     start: Instant,
 }
 
@@ -66,6 +67,7 @@ impl RateLimiter {
             parent: parent.map(Box::new),
             priority: AtomicU64::new(0).into(),
             start: Instant::now(),
+            divider: Arc::new(AtomicF64::new(0.0)),
         }
     }
 
@@ -83,6 +85,7 @@ impl RateLimiter {
             parent: parent.map(Box::new),
             priority: AtomicU64::new(0).into(),
             start: Instant::now(),
+            divider: Arc::new(AtomicF64::new(0.0)),
         }
     }
 
@@ -96,16 +99,24 @@ impl RateLimiter {
         self.limit
     }
 
+    /// Sets the divider. The actual speed limit is reduced by this factor.
+    pub fn set_divider(&self, divider: f64) {
+        self.divider.store(divider, Ordering::Relaxed);
+    }
+
     /// Waits until the given number of bytes can be let through.
     pub async fn wait(&self, bytes: usize) {
         let priority_raw = self.priority.load(Ordering::Relaxed) as f64;
         let priority = (priority_raw / self.start.elapsed().as_secs_f64()).sqrt() as u32;
+
         self.wait_priority(bytes, if self.unlimited { 0 } else { priority })
             .await;
     }
 
     #[async_recursion]
     async fn wait_priority(&self, obytes: usize, priority: u32) {
+        let divider = self.divider.load(Ordering::Relaxed);
+        let obytes = (obytes as f64 * divider) as usize;
         if let Some(v) = &self.parent {
             v.wait_priority(obytes, priority).await;
         }
