@@ -179,7 +179,7 @@ async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
         smol::Timer::after(Duration::from_secs(1)).await;
         sys.refresh_all();
         let cpus = sys.cpus();
-        let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
+        let usage = cpus.iter().map(|c| c.cpu_usage() / 100.0).sum::<f32>() / cpus.len() as f32;
         log::info!("CPU usage: {:.2}%", usage * 100.0);
         if usage < target_cpu {
             i = 0.0;
