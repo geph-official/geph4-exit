@@ -67,7 +67,7 @@ impl RateLimiter {
             parent: parent.map(Box::new),
             priority: AtomicU64::new(0).into(),
             start: Instant::now(),
-            divider: Arc::new(AtomicF64::new(0.0)),
+            divider: Arc::new(AtomicF64::new(1.0)),
         }
     }
 
@@ -85,7 +85,7 @@ impl RateLimiter {
             parent: parent.map(Box::new),
             priority: AtomicU64::new(0).into(),
             start: Instant::now(),
-            divider: Arc::new(AtomicF64::new(0.0)),
+            divider: Arc::new(AtomicF64::new(1.0)),
         }
     }
 
