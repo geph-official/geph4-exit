@@ -174,7 +174,7 @@ impl From<Config> for RootCtx {
 async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
     let mut sys = System::new_all();
     let mut i = 0.0;
-    let target_cpu = 0.1f32;
+    let target_cpu = 0.9f32;
     let mut divider;
     loop {
         smol::Timer::after(Duration::from_millis(200)).await;
