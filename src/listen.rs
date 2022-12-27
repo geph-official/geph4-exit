@@ -174,14 +174,14 @@ impl From<Config> for RootCtx {
 async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
     let mut sys = System::new_all();
     let mut i = 0.0;
-    let target_cpu = 0.9f32;
+    let target_cpu = 0.1f32;
     loop {
         smol::Timer::after(Duration::from_secs(1)).await;
         sys.refresh_all();
         let cpus = sys.cpus();
         let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
         log::info!("CPU usage: {:.2}%", usage * 100.0);
-        if usage < 0.7 {
+        if usage < target_cpu {
             i = 0.0;
             parent_ratelimit.set_divider(1.0);
         } else {
