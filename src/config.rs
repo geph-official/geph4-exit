@@ -84,7 +84,7 @@ pub struct Config {
 }
 
 fn all_limit_default() -> u32 {
-    100000
+    120000
 }
 
 fn sosistab_listen_default() -> String {
