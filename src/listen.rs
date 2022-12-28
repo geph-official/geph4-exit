@@ -208,7 +208,7 @@ async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
             let p = total_usage - target_usage;
             i += p;
             i = i.clamp(-20.0, 20.0);
-            divider = (3.0 * p + 0.4 * i).max(1.0);
+            divider = (1.0 * p + 0.4 * i).max(1.0);
             log::info!("PID divider {divider}, p {p}, i {i}");
             parent_ratelimit.set_divider(divider as f64);
         }
