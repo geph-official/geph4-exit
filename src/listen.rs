@@ -196,8 +196,7 @@ async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
         .unwrap();
         let bw_delta = bw_used.saturating_sub(last_bw_used);
         last_bw_used = bw_used;
-        let bw_usage =
-            (bw_delta as f64 / 1000.0 / parent_ratelimit.limit() as f64) as f32 * target_usage;
+        let bw_usage = (bw_delta as f64 / 1000.0 / parent_ratelimit.limit() as f64) as f32;
         let total_usage = bw_usage.max(cpu_usage);
         log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
         log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
