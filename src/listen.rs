@@ -166,31 +166,48 @@ impl From<Config> for RootCtx {
                 .build(),
 
             parent_ratelimit: parent_ratelimit.clone(),
-            _task: smolscale::spawn(set_ratelimit_loop(parent_ratelimit)),
+            _task: smolscale::spawn(set_ratelimit_loop(
+                cfg.nat_external_iface()
+                    .clone()
+                    .unwrap_or_else(|| String::from("lo")),
+                parent_ratelimit,
+            )),
         }
     }
 }
 
-async fn set_ratelimit_loop(parent_ratelimit: RateLimiter) {
+async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
     let mut sys = System::new_all();
     let mut i = 0.0;
-    let target_cpu = 0.9f32;
+    let target_usage = 0.9f32;
     let mut divider;
+    let mut timer = smol::Timer::interval(Duration::from_secs(1));
+    let mut last_bw_used = 0u128;
     loop {
-        smol::Timer::after(Duration::from_millis(200)).await;
+        timer.next().await;
         sys.refresh_all();
         let cpus = sys.cpus();
-        let usage = cpus.iter().map(|c| c.cpu_usage() / 100.0).sum::<f32>() / cpus.len() as f32;
-        log::info!("CPU usage: {:.2}%", usage * 100.0);
-        if usage < target_cpu * 0.8 {
+        let cpu_usage = cpus.iter().map(|c| c.cpu_usage() / 100.0).sum::<f32>() / cpus.len() as f32;
+        let bw_used: u128 = String::from_utf8_lossy(
+            &std::fs::read(format!("/sys/class/net/{iface_name}/statistics/tx_bytes")).unwrap(),
+        )
+        .parse()
+        .unwrap();
+        let bw_delta = bw_used.saturating_sub(last_bw_used);
+        last_bw_used = bw_used;
+        let bw_usage = (bw_delta as f64 / 1000.0 / parent_ratelimit.limit() as f64) as f32;
+        let total_usage = bw_usage.max(cpu_usage);
+        log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
+        log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
+        if total_usage < target_usage * 0.8 {
             i = 0.0;
             parent_ratelimit.set_divider(1.0);
         } else {
-            let p = usage - target_cpu;
+            let p = total_usage - target_usage;
             i += p;
-            i = i.clamp(-1000.0, 1000.0);
+            i = i.clamp(-20.0, 20.0);
             divider = (3.0 * p + 0.4 * i).max(1.0);
-            log::info!("CPU divider {divider}, p {p}, i {i}");
+            log::info!("PID divider {divider}, p {p}, i {i}");
             parent_ratelimit.set_divider(divider as f64);
         }
     }
