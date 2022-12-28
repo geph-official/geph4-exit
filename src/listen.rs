@@ -191,6 +191,7 @@ async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
         let bw_used: u128 = String::from_utf8_lossy(
             &std::fs::read(format!("/sys/class/net/{iface_name}/statistics/tx_bytes")).unwrap(),
         )
+        .trim()
         .parse()
         .unwrap();
         let bw_delta = bw_used.saturating_sub(last_bw_used);
