@@ -791,9 +791,9 @@ dependencies = [
 
 [[package]]
 name = "chunked_transfer"
-version = "1.4.0"
+version = "1.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fff857943da45f546682664a79488be82e69e43c1a7a2307679ab9afb3a66d2e"
+checksum = "cca491388666e04d7248af3f60f0c40cfb0991c72205595d7c396e3510207d1a"
 
 [[package]]
 name = "cidr-utils"
@@ -4126,9 +4126,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.5.4"
+version = "0.5.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "54b87cd62bbcfcc364deca86e9dcc816629de50d25ca9066fbe815c8800b792f"
+checksum = "7fda047ee6058025a3effa4f7cd4faea18915742c4e4b80bf442e503d363d460"
 dependencies = [
  "anyhow",
  "arc-swap",
