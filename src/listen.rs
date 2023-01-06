@@ -433,20 +433,9 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     let self_bridge_fut = async {
         let flow_key = bridge_pkt_key("SELF");
         let listen_addr: SocketAddr = ctx.config.sosistab_listen().parse().unwrap();
-        log::info!(
-            "listening on {}@{}:{}",
-            hex::encode(x25519_dalek::PublicKey::from(&ctx.sosistab_sk).to_bytes()),
-            if listen_addr.ip().is_unspecified() {
-                IpAddr::from(*MY_PUBLIC_IP)
-            } else {
-                listen_addr.ip()
-            },
-            listen_addr.port()
-        );
+
         let udp_listen = ctx.listen_udp(None, listen_addr, &flow_key).await.unwrap();
         let tcp_listen = ctx.listen_tcp(None, listen_addr, &flow_key).await.unwrap();
-        log::debug!("sosis_listener initialized");
-
         loop {
             let sess = udp_listen
                 .accept_session()
@@ -511,6 +500,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .sosistab2_listen()
                 .parse()
                 .expect("cannot parse sosistab2 listening address");
+
             let listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
             let mut _task = None;
@@ -559,6 +549,20 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 }));
             }
             // we now enter the usual feeding loop
+            log::info!(
+                "listening on {}@{}:{}",
+                hex::encode(
+                    ObfsUdpSecret::from_bytes(ctx.sosistab2_sk.to_bytes())
+                        .to_public()
+                        .as_bytes()
+                ),
+                if listen_addr.ip().is_unspecified() {
+                    IpAddr::from(*MY_PUBLIC_IP)
+                } else {
+                    listen_addr.ip()
+                },
+                listen_addr.port()
+            );
             loop {
                 let pipe = listener.accept().await?;
                 handle_pipe_v2(ctx.clone(), pipe);
