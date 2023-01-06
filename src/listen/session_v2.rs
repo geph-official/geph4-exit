@@ -170,7 +170,7 @@ async fn handle_conn(
         return Ok(());
     }
     // check auth
-    if client_exit.0.authed().is_none() {
+    if client_exit.0.authed().is_none() && ctx.config.official().is_some() {
         anyhow::bail!("not authed yet, cannot do anything")
     }
 
