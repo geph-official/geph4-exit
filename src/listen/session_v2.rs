@@ -210,9 +210,15 @@ impl ClientExitImpl {
     /// Gets the ratelimit
     pub fn limiter(&self) -> RateLimiter {
         if self.is_plus() {
-            self.ctx.get_ratelimit(self.authed().unwrap(), false)
+            self.ctx.get_ratelimit(
+                self.authed().unwrap_or_else(|| rand::thread_rng().gen()),
+                false,
+            )
         } else {
-            self.ctx.get_ratelimit(self.authed().unwrap(), true)
+            self.ctx.get_ratelimit(
+                self.authed().unwrap_or_else(|| rand::thread_rng().gen()),
+                true,
+            )
         }
     }
 
