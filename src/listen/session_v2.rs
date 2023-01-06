@@ -116,7 +116,10 @@ async fn handle_conn(
             smolscale::spawn::<anyhow::Result<()>>(async move {
                 vpn_stream.recv_urel().await?;
                 if start_vpn {
-                    let limiter = client_exit.0.limiter();
+                    let limiter = client_exit
+                        .0
+                        .limiter()
+                        .unwrap_or_else(|| RateLimiter::unlimited(None));
                     let vpn_ipv4 = client_exit.0.get_vpn_ipv4().await.unwrap();
                     let downstream = vpn_subscribe_down(vpn_ipv4);
 
@@ -175,7 +178,10 @@ async fn handle_conn(
     }
 
     // MAIN STUFF HERE
-    let limiter = client_exit.0.limiter();
+    let limiter = client_exit
+        .0
+        .limiter()
+        .unwrap_or_else(|| RateLimiter::unlimited(None));
     proxy_loop(
         ctx,
         limiter.into(),
@@ -208,18 +214,12 @@ impl ClientExitImpl {
     }
 
     /// Gets the ratelimit
-    pub fn limiter(&self) -> RateLimiter {
-        if self.is_plus() {
-            self.ctx.get_ratelimit(
-                self.authed().unwrap_or_else(|| rand::thread_rng().gen()),
-                false,
-            )
+    pub fn limiter(&self) -> Option<RateLimiter> {
+        Some(if self.is_plus() {
+            self.ctx.get_ratelimit(self.authed()?, false)
         } else {
-            self.ctx.get_ratelimit(
-                self.authed().unwrap_or_else(|| rand::thread_rng().gen()),
-                true,
-            )
-        }
+            self.ctx.get_ratelimit(self.authed()?, true)
+        })
     }
 
     /// Checks whether or not the authentication has completed.
