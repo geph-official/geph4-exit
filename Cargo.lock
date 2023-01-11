@@ -4125,9 +4125,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.5.13"
+version = "0.5.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8a584d9d4ef5a5eafddd5fcd8bc994f60c2861d7efff21ade43f42f8d57ee60"
+checksum = "a6e9ee78cc9b47d349bd2b37fa66ee4dcd717d2e00f9239bbe098520d3581704"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4360,9 +4360,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.26.8"
+version = "0.26.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "29ddf41e393a9133c81d5f0974195366bd57082deac6e0eb02ed39b8341c2bb6"
+checksum = "5c18a6156d1f27a9592ee18c1a846ca8dd5c258b7179fc193ae87c74ebb666f5"
 dependencies = [
  "cfg-if 1.0.0",
  "core-foundation-sys",
