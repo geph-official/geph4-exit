@@ -22,7 +22,7 @@ use stdcode::StdcodeSerializeExt;
 use std::{
     convert::Infallible,
     net::SocketAddr,
-    sync::Arc,
+    sync::{atomic::Ordering, Arc},
     time::{Duration, SystemTime},
 };
 
@@ -91,6 +91,9 @@ async fn forward_and_upload(
 
 #[async_trait]
 impl BridgeExitProtocol for ControlService {
+    async fn load_factor(&self) -> f64 {
+        self.ctx.load_factor.load(Ordering::Relaxed)
+    }
     async fn advertise_raw_v2(
         &self,
         protocol: SmolStr,

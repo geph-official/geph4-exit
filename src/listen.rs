@@ -13,6 +13,7 @@ use crate::{
     ratelimit::{RateLimiter, STAT_LIMITER},
     vpn,
 };
+use atomic_float::AtomicF64;
 use bytes::Bytes;
 use ed25519_dalek::{ed25519::signature::Signature, Signer};
 use event_listener::Event;
@@ -62,6 +63,8 @@ pub struct RootCtx {
     // pub google_proxy: Option<SocketAddr>,
     pub sess_replacers: DashMap<[u8; 32], Sender<Session>>,
     pub kill_event: Event,
+
+    pub load_factor: Arc<AtomicF64>,
 
     mass_ratelimits: Cache<u64, RateLimiter>,
 
@@ -130,6 +133,7 @@ impl From<Config> for RootCtx {
         log::info!("signing_sk = {}", hex::encode(signing_sk.public));
         let sosistab_sk = x25519_dalek::StaticSecret::from(*signing_sk.secret.as_bytes());
         let parent_ratelimit = RateLimiter::new(*cfg.all_limit(), *cfg.all_limit(), None);
+        let load_factor = Arc::new(AtomicF64::new(0.0));
         Self {
             config: cfg.clone(),
             stat_client: cfg.official().as_ref().map(|official| {
@@ -152,6 +156,8 @@ impl From<Config> for RootCtx {
             sosistab_sk,
             sosistab2_sk,
 
+            load_factor: load_factor.clone(),
+
             session_count: Default::default(),
             raw_session_count: Default::default(),
             conn_count: Default::default(),
@@ -167,6 +173,7 @@ impl From<Config> for RootCtx {
 
             parent_ratelimit: parent_ratelimit.clone(),
             _task: smolscale::spawn(set_ratelimit_loop(
+                load_factor,
                 cfg.nat_external_iface()
                     .clone()
                     .unwrap_or_else(|| String::from("lo")),
@@ -176,7 +183,11 @@ impl From<Config> for RootCtx {
     }
 }
 
-async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
+async fn set_ratelimit_loop(
+    load_factor: Arc<AtomicF64>,
+    iface_name: String,
+    parent_ratelimit: RateLimiter,
+) {
     let mut sys = System::new_all();
     let mut i = 0.0;
     let target_usage = 0.9f32;
@@ -198,12 +209,13 @@ async fn set_ratelimit_loop(iface_name: String, parent_ratelimit: RateLimiter) {
         last_bw_used = bw_used;
         let bw_usage = (bw_delta as f64 / 1000.0 / parent_ratelimit.limit() as f64) as f32;
         let total_usage = bw_usage.max(cpu_usage);
-        log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
-        log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
+        load_factor.store(total_usage as f64, Ordering::Relaxed);
         if total_usage < target_usage * 0.8 {
             i = 0.0;
             parent_ratelimit.set_divider(1.0);
         } else {
+            log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
+            log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
             let p = total_usage - target_usage;
             i += p;
             i = i.clamp(-20.0, 20.0);
