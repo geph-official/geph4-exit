@@ -4125,9 +4125,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.5.14"
+version = "0.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6e9ee78cc9b47d349bd2b37fa66ee4dcd717d2e00f9239bbe098520d3581704"
+checksum = "0bf4e6f9d636aa9e7b38dcc91dab577edfe15ed4f9cf178da3fccec7942487dd"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4136,7 +4136,7 @@ dependencies = [
  "async-native-tls",
  "async-trait",
  "bipe",
- "blake3 0.3.8",
+ "blake3 1.3.3",
  "bytes",
  "cached 0.26.2",
  "concurrent-queue 1.2.4",
