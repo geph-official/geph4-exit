@@ -184,13 +184,13 @@ impl BridgeExitProtocol for ControlService {
                 };
                 let mut rng = rand::rngs::StdRng::from_seed(secret_key.to_bytes());
                 // create a listener
-                let (addr, listener, key) = loop {
+                let (addr, listener, _) = loop {
                     let addr: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
                         .parse()
                         .unwrap();
-                    let key = ObfsUdpSecret::generate();
-                    match ObfsUdpListener::bind(addr, key.clone()) {
-                        Ok(listener) => break (addr, listener, key.to_public()),
+
+                    match ObfsUdpListener::bind(addr, secret_key.clone()) {
+                        Ok(listener) => break (addr, listener, secret_key.to_public()),
                         Err(_err) => {
                             log::warn!("cannot bind to {}", addr);
                         }
@@ -210,7 +210,7 @@ impl BridgeExitProtocol for ControlService {
                                 protocol: "sosistab2-obfsudp".into(),
                                 endpoint: bridge_addr,
                                 sosistab_key: bincode::serialize(&(
-                                    key,
+                                    secret_key,
                                     ctx.sosistab2_sk.to_public(),
                                 ))
                                 .unwrap()
