@@ -171,7 +171,7 @@ impl BridgeExitProtocol for ControlService {
                             self.ctx.signing_sk.secret.to_bytes(),
                             bridge_addr,
                             protocol,
-                            "x25519-hash-gen-lala",
+                            "x25519-hash-gen-lala-ohno",
                         )
                             .stdcode(),
                     )
@@ -210,7 +210,7 @@ impl BridgeExitProtocol for ControlService {
                                 protocol: "sosistab2-obfsudp".into(),
                                 endpoint: bridge_addr,
                                 sosistab_key: bincode::serialize(&(
-                                    secret_key,
+                                    secret_key.to_public(),
                                     ctx.sosistab2_sk.to_public(),
                                 ))
                                 .unwrap()
