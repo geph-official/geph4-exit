@@ -60,7 +60,7 @@ impl ControlService {
     }
 }
 
-fn dummy_tls_config() -> TlsAcceptor {
+pub fn dummy_tls_config() -> TlsAcceptor {
     let cert = rcgen::generate_simple_self_signed(vec!["helloworld.com".to_string()]).unwrap();
     let cert_pem = cert.serialize_pem().unwrap();
     let cert_key = cert.serialize_private_key_pem();

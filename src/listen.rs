@@ -10,6 +10,7 @@ use std::{
 use crate::{
     asn::MY_PUBLIC_IP,
     config::Config,
+    listen::control::dummy_tls_config,
     ratelimit::{RateLimiter, STAT_LIMITER},
     vpn,
 };
@@ -31,7 +32,7 @@ use moka::sync::Cache;
 use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*, Task};
 
 use sosistab::Session;
-use sosistab2::{MuxSecret, ObfsUdpListener, ObfsUdpSecret};
+use sosistab2::{MuxSecret, ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
 use sysinfo::{CpuExt, System, SystemExt};
 use x25519_dalek::StaticSecret;
 
@@ -513,7 +514,12 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .parse()
                 .expect("cannot parse sosistab2 listening address");
 
-            let listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
+            let udp_listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
+            let tls_cookie = Bytes::copy_from_slice(secret.to_public().as_bytes());
+            let tls_listener =
+                ObfsTlsListener::bind(listen_addr, dummy_tls_config(), tls_cookie.clone())
+                    .await
+                    .unwrap();
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
             let mut _task = None;
             if let Some(client) = ctx.binder_client.clone() {
@@ -551,6 +557,26 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                             let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
                             unsigned.exit_signature = sig.as_bytes().to_vec().into();
                             client.add_bridge_route(unsigned).await??;
+
+                            let mut unsigned = BridgeDescriptor {
+                                is_direct: true,
+                                protocol: "sosistab2-obfstls".into(),
+                                endpoint: SocketAddr::new(
+                                    (*MY_PUBLIC_IP).into(),
+                                    listen_addr.port(),
+                                ),
+                                sosistab_key: tls_cookie.clone(),
+                                exit_hostname: ctx.exit_hostname().into(),
+                                alloc_group: "direct".into(),
+                                update_time: SystemTime::now()
+                                    .duration_since(SystemTime::UNIX_EPOCH)
+                                    .unwrap()
+                                    .as_secs(),
+                                exit_signature: Bytes::new(),
+                            };
+                            let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
+                            unsigned.exit_signature = sig.as_bytes().to_vec().into();
+                            client.add_bridge_route(unsigned).await??;
                             anyhow::Ok(())
                         };
                         if let Err(err) = fallible.await {
@@ -576,7 +602,10 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 listen_addr.port()
             );
             loop {
-                let pipe = listener.accept().await?;
+                let pipe = udp_listener
+                    .accept_pipe()
+                    .race(tls_listener.accept_pipe())
+                    .await?;
                 handle_pipe_v2(ctx.clone(), pipe);
             }
         })
