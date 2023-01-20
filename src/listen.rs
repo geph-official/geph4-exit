@@ -527,7 +527,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 _task = Some(smolscale::spawn(async move {
                     loop {
                         let fallible = async {
-                            let mut unsigned = BridgeDescriptor {
+                            let mut unsigned_udp = BridgeDescriptor {
                                 is_direct: true,
                                 protocol: "sosistab2-obfsudp".into(),
                                 endpoint: SocketAddr::new(
@@ -554,11 +554,13 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     .as_secs(),
                                 exit_signature: Bytes::new(),
                             };
-                            let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
-                            unsigned.exit_signature = sig.as_bytes().to_vec().into();
-                            client.add_bridge_route(unsigned).await??;
+                            let sig = ctx
+                                .signing_sk
+                                .sign(&bincode::serialize(&unsigned_udp).unwrap());
+                            unsigned_udp.exit_signature = sig.as_bytes().to_vec().into();
+                            client.add_bridge_route(unsigned_udp).await??;
 
-                            let mut unsigned = BridgeDescriptor {
+                            let mut unsigned_tcp = BridgeDescriptor {
                                 is_direct: true,
                                 protocol: "sosistab2-obfstls".into(),
                                 endpoint: SocketAddr::new(
@@ -574,9 +576,11 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     .as_secs(),
                                 exit_signature: Bytes::new(),
                             };
-                            let sig = ctx.signing_sk.sign(&bincode::serialize(&unsigned).unwrap());
-                            unsigned.exit_signature = sig.as_bytes().to_vec().into();
-                            client.add_bridge_route(unsigned).await??;
+                            let sig = ctx
+                                .signing_sk
+                                .sign(&bincode::serialize(&unsigned_tcp).unwrap());
+                            unsigned_tcp.exit_signature = sig.as_bytes().to_vec().into();
+                            client.add_bridge_route(unsigned_tcp).await??;
                             anyhow::Ok(())
                         };
                         if let Err(err) = fallible.await {
