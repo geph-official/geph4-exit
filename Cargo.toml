@@ -95,3 +95,6 @@ panic = "abort"
 opt-level=3
 debug=2
 # lto=false
+
+[features]
+dhat-heap = []    # if you are doing heap profiling
