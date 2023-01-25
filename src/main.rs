@@ -37,7 +37,7 @@ struct Opt {
 
 fn main() -> anyhow::Result<()> {
     #[cfg(feature = "dhat-heap")]
-    let _profiler = dhat::Profiler::new_ad_hoc();
+    let _profiler = dhat::Profiler::new_heap();
 
     // std::env::set_var("SMOLSCALE_USE_AGEX", "1");
     std::env::set_var("SOSISTAB_NO_OOB", "1");
