@@ -74,9 +74,12 @@ async-trait = "0.1.58"
 smol_str = "0.1.23"
 sysinfo = "0.26.5"
 
-mimalloc = { version = "0.1.30", default-features=false}
+# mimalloc = { version = "0.1.30", default-features=false}
 stdcode = "0.1.13"
 sosistab2 = "0.6"
+
+# sosistab2={path="../sosistab2"}
+
 nanorpc = "0.1.12"
 closure = "0.3.0"
 async-recursion = "1.0.0"
