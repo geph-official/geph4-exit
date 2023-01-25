@@ -1294,22 +1294,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "dhat"
-version = "0.3.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4f2aaf837aaf456f6706cb46386ba8dffd4013a757e36f4ea05c20dd46b209a3"
-dependencies = [
- "backtrace 0.3.67",
- "lazy_static",
- "mintex",
- "parking_lot 0.12.1",
- "rustc-hash",
- "serde",
- "serde_json",
- "thousands",
-]
-
-[[package]]
 name = "diff"
 version = "0.1.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1775,7 +1759,6 @@ dependencies = [
  "cidr-utils",
  "closure",
  "dashmap 4.0.2",
- "dhat 0.3.2",
  "ed25519-dalek",
  "env_logger",
  "event-listener",
@@ -2409,16 +2392,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b275950c28b37e794e8c55d88aeb5e139d0ce23fdbbeda68f8d7174abdf9e8fa"
 dependencies = [
  "adler",
-]
-
-[[package]]
-name = "mintex"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd7c5ba1c3b5a23418d7bbf98c71c3d4946a0125002129231da8d6b723d559cb"
-dependencies = [
- "once_cell",
- "sys-info",
 ]
 
 [[package]]
@@ -4065,9 +4038,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab"
-version = "0.5.41"
+version = "0.5.42"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f7f08338edec3d4b836e645c4752d9293d3b2629f13cdf679baf852e219751d"
+checksum = "d216f4fb7315c1b2c96954ae4287f540657e4ad3413544c9202bf84924f71a1d"
 dependencies = [
  "anyhow",
  "arc-swap",
@@ -4087,7 +4060,7 @@ dependencies = [
  "concurrent-queue 1.2.4",
  "constant_time_eq 0.1.5",
  "dashmap 5.4.0",
- "dhat 0.2.4",
+ "dhat",
  "eff-wordlist",
  "env_logger",
  "event-listener",
@@ -4362,16 +4335,6 @@ dependencies = [
  "quote",
  "syn",
  "unicode-xid",
-]
-
-[[package]]
-name = "sys-info"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0b3a0d0aba8bf96a0e1ddfdc352fc53b3df7f39318c71854910c3c4b024ae52c"
-dependencies = [
- "cc",
- "libc",
 ]
 
 [[package]]

@@ -24,10 +24,6 @@ mod lists;
 mod ratelimit;
 mod vpn;
 
-#[cfg(feature = "dhat-heap")]
-#[global_allocator]
-static ALLOC: dhat::Alloc = dhat::Alloc;
-
 #[derive(Debug, StructOpt, Clone)]
 struct Opt {
     #[structopt(long)]
@@ -36,9 +32,6 @@ struct Opt {
 }
 
 fn main() -> anyhow::Result<()> {
-    #[cfg(feature = "dhat-heap")]
-    let _profiler = dhat::Profiler::new_heap();
-
     // std::env::set_var("SMOLSCALE_USE_AGEX", "1");
     std::env::set_var("SOSISTAB_NO_OOB", "1");
     // std::env::set_var("SOSISTAB_UNFAIR_CC", "1");
@@ -117,19 +110,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        main_loop(Arc::new(ctx))
-            .or(async {
-                #[cfg(feature = "dhat-heap")]
-                {
-                    let net = smol::net::TcpListener::bind("127.0.0.1:11111").await?;
-                    let _ = net.accept().await?;
-                }
-
-                #[cfg(not(feature = "dhat-heap"))]
-                smol::future::pending::<()>().await;
-                Ok(())
-            })
-            .await
+        main_loop(Arc::new(ctx)).await
     })
 }
 
