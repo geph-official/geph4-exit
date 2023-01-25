@@ -39,7 +39,7 @@ fn main() -> anyhow::Result<()> {
     #[cfg(feature = "dhat-heap")]
     let _profiler = dhat::Profiler::new_ad_hoc();
 
-    std::env::set_var("SMOLSCALE_USE_AGEX", "1");
+    // std::env::set_var("SMOLSCALE_USE_AGEX", "1");
     std::env::set_var("SOSISTAB_NO_OOB", "1");
     // std::env::set_var("SOSISTAB_UNFAIR_CC", "1");
     if std::env::var("GEPH_SINGLETHREADED").is_ok() {
