@@ -120,7 +120,10 @@ fn main() -> anyhow::Result<()> {
         main_loop(Arc::new(ctx))
             .or(async {
                 #[cfg(feature = "dhat-heap")]
-                smol::Timer::after(Duration::from_secs(3600)).await;
+                {
+                    let net = smol::net::TcpListener::bind("127.0.0.1:11111").await?;
+                    let _ = net.accept().await?;
+                }
 
                 #[cfg(not(feature = "dhat-heap"))]
                 smol::future::pending::<()>().await;
