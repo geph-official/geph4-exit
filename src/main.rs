@@ -2,6 +2,7 @@ use std::{
     io::{Read, Write},
     net::SocketAddr,
     sync::Arc,
+    time::Duration,
 };
 
 use anyhow::Context;
@@ -10,7 +11,7 @@ use env_logger::Env;
 
 use flate2::{write::GzEncoder, Compression};
 
-use smol::process::Command;
+use smol::{future::FutureExt, process::Command};
 use structopt::StructOpt;
 
 use crate::listen::{main_loop, RootCtx};
@@ -23,6 +24,10 @@ mod lists;
 mod ratelimit;
 mod vpn;
 
+#[cfg(feature = "dhat-heap")]
+#[global_allocator]
+static ALLOC: dhat::Alloc = dhat::Alloc;
+
 #[derive(Debug, StructOpt, Clone)]
 struct Opt {
     #[structopt(long)]
@@ -31,6 +36,9 @@ struct Opt {
 }
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(feature = "dhat-heap")]
+    let _profiler = dhat::Profiler::new_ad_hoc();
+
     std::env::set_var("SMOLSCALE_USE_AGEX", "1");
     std::env::set_var("SOSISTAB_NO_OOB", "1");
     // std::env::set_var("SOSISTAB_UNFAIR_CC", "1");
@@ -108,7 +116,17 @@ fn main() -> anyhow::Result<()> {
                     .await?;
             }
         }
-        main_loop(Arc::new(ctx)).await
+
+        main_loop(Arc::new(ctx))
+            .or(async {
+                #[cfg(feature = "dhat-heap")]
+                smol::Timer::after(Duration::from_secs(3600)).await;
+
+                #[cfg(not(feature = "dhat-heap"))]
+                smol::future::pending::<()>().await;
+                Ok(())
+            })
+            .await
     })
 }
 

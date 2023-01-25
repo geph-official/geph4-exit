@@ -88,6 +88,7 @@ native-tls = "0.2.11"
 rcgen = "0.10.0"
 priority-async-mutex = "0.1.1"
 atomic_float = "0.1.0"
+dhat = "0.3.2"
 
 [profile.release]
 panic = "abort"
