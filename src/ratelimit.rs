@@ -7,7 +7,7 @@ use std::{
         atomic::{AtomicU64, Ordering},
         Arc,
     },
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 pub static STAT_LIMITER: Lazy<
@@ -90,7 +90,8 @@ impl RateLimiter {
                     smol::Timer::at(until.earliest_possible()).await;
                 }
                 NegativeMultiDecision::InsufficientCapacity(_) => {
-                    panic!("insufficient capacity in rate limiter")
+                    log::error!("INSUFFICIENT CAP");
+                    smol::Timer::after(Duration::from_secs(1)).await;
                 }
             }
         }
