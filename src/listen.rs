@@ -12,6 +12,7 @@ use crate::{
     config::Config,
     listen::control::dummy_tls_config,
     ratelimit::{RateLimiter, BW_MULTIPLIER, STAT_LIMITER},
+    stats::StatsPipe,
     vpn,
 };
 use atomic_float::AtomicF64;
@@ -496,6 +497,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     let pipe_listen_fut = {
         let ctx = ctx.clone();
+        let flow_key = bridge_pkt_key("SELF");
         smolscale::spawn(async move {
             // TODO this key reuse is *probably* fine security-wise, but we might wanna switch this to something else
             // This hack allows the client to deterministically get the correct ObfsUdpPublic, which is important for selfhosted instances having constant keys.
@@ -597,12 +599,20 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 },
                 listen_addr.port()
             );
+
             loop {
                 let pipe = udp_listener
                     .accept_pipe()
                     .race(tls_listener.accept_pipe())
                     .await?;
-                handle_pipe_v2(ctx.clone(), pipe);
+                if let Some(client) = ctx.stat_client.as_ref() {
+                    handle_pipe_v2(
+                        ctx.clone(),
+                        StatsPipe::new(pipe, client.clone(), flow_key.clone()),
+                    );
+                } else {
+                    handle_pipe_v2(ctx.clone(), pipe);
+                }
             }
         })
     };

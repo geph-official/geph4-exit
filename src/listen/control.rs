@@ -1,4 +1,4 @@
-use crate::asn::MY_PUBLIC_IP;
+use crate::{asn::MY_PUBLIC_IP, stats::StatsPipe};
 
 use super::{session_legacy, session_v2::handle_pipe_v2, RootCtx};
 
@@ -74,6 +74,17 @@ async fn forward_and_upload(
     listener: impl PipeListener + Send + Sync + 'static,
     bd_template: BridgeDescriptor,
 ) -> Infallible {
+    let bridge_pkt_key = {
+        let exit_hostname = ctx.exit_hostname_dashed();
+        move |bridge_group: &str| {
+            format!(
+                "raw_flow.{}.{}",
+                exit_hostname.replace('.', "-"),
+                bridge_group.replace('.', "-")
+            )
+        }
+    };
+    let flow_key = bridge_pkt_key(&bd_template.alloc_group);
     let _forwarder = {
         let ctx = ctx.clone();
         smolscale::spawn(async move {
@@ -82,7 +93,14 @@ async fn forward_and_upload(
                     .accept_pipe()
                     .await
                     .expect("oh no how did this happen");
-                handle_pipe_v2(ctx.clone(), pipe);
+                if let Some(stat_client) = ctx.stat_client.as_ref() {
+                    handle_pipe_v2(
+                        ctx.clone(),
+                        StatsPipe::new(pipe, stat_client.clone(), flow_key.clone()),
+                    );
+                } else {
+                    handle_pipe_v2(ctx.clone(), pipe);
+                }
             }
         })
     };

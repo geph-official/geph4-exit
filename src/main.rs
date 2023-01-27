@@ -22,6 +22,7 @@ mod connect;
 mod listen;
 mod lists;
 mod ratelimit;
+mod stats;
 mod vpn;
 
 #[derive(Debug, StructOpt, Clone)]

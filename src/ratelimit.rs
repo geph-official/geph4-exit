@@ -40,10 +40,6 @@ pub struct RateLimiter {
         >,
     >,
     unlimited: bool,
-    limit: u32,
-
-    divider: Arc<AtomicF64>,
-    start: Instant,
 }
 
 impl RateLimiter {
@@ -60,10 +56,6 @@ impl RateLimiter {
         Self {
             inner: Arc::new(inner),
             unlimited: false,
-            limit: limit_kb,
-
-            start: Instant::now(),
-            divider: Arc::new(AtomicF64::new(1.0)),
         }
     }
 
@@ -77,21 +69,12 @@ impl RateLimiter {
         Self {
             inner,
             unlimited: true,
-            limit: u32::MAX,
-
-            start: Instant::now(),
-            divider: Arc::new(AtomicF64::new(1.0)),
         }
     }
 
     /// Checks whether the limiter is unlimited.
     pub fn is_unlimited(&self) -> bool {
         self.unlimited
-    }
-
-    /// Returns the actual limit in KiB/s.
-    pub fn limit(&self) -> u32 {
-        self.limit
     }
 
     /// Waits until the given number of bytes can be let through.
