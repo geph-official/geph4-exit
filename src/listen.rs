@@ -11,7 +11,7 @@ use crate::{
     asn::MY_PUBLIC_IP,
     config::Config,
     listen::control::dummy_tls_config,
-    ratelimit::{RateLimiter, STAT_LIMITER},
+    ratelimit::{RateLimiter, BW_MULTIPLIER, STAT_LIMITER},
     vpn,
 };
 use atomic_float::AtomicF64;
@@ -70,8 +70,6 @@ pub struct RootCtx {
     mass_ratelimits: Cache<u64, RateLimiter>,
 
     stat_count: AtomicU64,
-
-    parent_ratelimit: RateLimiter,
 
     _task: Task<()>,
 }
@@ -133,7 +131,7 @@ impl From<Config> for RootCtx {
         };
         log::info!("signing_sk = {}", hex::encode(signing_sk.public));
         let sosistab_sk = x25519_dalek::StaticSecret::from(*signing_sk.secret.as_bytes());
-        let parent_ratelimit = RateLimiter::new(*cfg.all_limit(), *cfg.all_limit(), None);
+
         let load_factor = Arc::new(AtomicF64::new(0.0));
         Self {
             config: cfg.clone(),
@@ -172,23 +170,18 @@ impl From<Config> for RootCtx {
                 .time_to_idle(Duration::from_secs(86400))
                 .build(),
 
-            parent_ratelimit: parent_ratelimit.clone(),
             _task: smolscale::spawn(set_ratelimit_loop(
                 load_factor,
                 cfg.nat_external_iface()
                     .clone()
                     .unwrap_or_else(|| String::from("lo")),
-                parent_ratelimit,
+                *cfg.all_limit(),
             )),
         }
     }
 }
 
-async fn set_ratelimit_loop(
-    load_factor: Arc<AtomicF64>,
-    iface_name: String,
-    parent_ratelimit: RateLimiter,
-) {
+async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all_limit: u32) {
     let mut sys = System::new_all();
     let mut i = 0.0;
     let target_usage = 0.95f32;
@@ -208,12 +201,12 @@ async fn set_ratelimit_loop(
         .unwrap();
         let bw_delta = bw_used.saturating_sub(last_bw_used);
         last_bw_used = bw_used;
-        let bw_usage = (bw_delta as f64 / 1000.0 / parent_ratelimit.limit() as f64) as f32;
+        let bw_usage = (bw_delta as f64 / 1000.0 / all_limit as f64) as f32;
         let total_usage = bw_usage.max(cpu_usage);
         load_factor.store(total_usage as f64, Ordering::Relaxed);
         if total_usage < target_usage * 0.8 {
             i = 0.0;
-            parent_ratelimit.set_divider(1.0);
+            BW_MULTIPLIER.store(1.0, Ordering::Relaxed);
         } else {
             log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
             log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
@@ -222,7 +215,7 @@ async fn set_ratelimit_loop(
             i = i.clamp(-20.0, 20.0);
             divider = 1.0 + (1.0 * p + 0.4 * i).min(100.0);
             log::info!("PID divider {divider}, p {p}, i {i}");
-            parent_ratelimit.set_divider(divider as f64);
+            BW_MULTIPLIER.store(divider as f64, Ordering::Relaxed);
         }
     }
 }
@@ -257,7 +250,6 @@ impl RootCtx {
     }
 
     pub fn get_ratelimit(&self, key: u64, free: bool) -> RateLimiter {
-        let limit = *self.config.all_limit();
         if free {
             self.mass_ratelimits.get_with(key, || {
                 RateLimiter::new(
@@ -267,11 +259,11 @@ impl RootCtx {
                         .and_then(|s| *s.free_limit())
                         .unwrap_or_default(),
                     32,
-                    self.parent_ratelimit.clone().into(),
                 )
             })
         } else {
-            RateLimiter::unlimited(self.parent_ratelimit.clone().into())
+            self.mass_ratelimits
+                .get_with(key.rotate_left(3), || RateLimiter::new(1903, 5_000_000))
         }
     }
 

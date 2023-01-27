@@ -119,7 +119,7 @@ async fn handle_conn(
                     let limiter = client_exit
                         .0
                         .limiter()
-                        .unwrap_or_else(|| RateLimiter::unlimited(None));
+                        .unwrap_or_else(|| RateLimiter::unlimited());
                     let vpn_ipv4 = client_exit.0.get_vpn_ipv4().await.unwrap();
                     let downstream = vpn_subscribe_down(vpn_ipv4);
 
@@ -181,7 +181,7 @@ async fn handle_conn(
     let limiter = client_exit
         .0
         .limiter()
-        .unwrap_or_else(|| RateLimiter::unlimited(None));
+        .unwrap_or_else(|| RateLimiter::unlimited());
     proxy_loop(
         ctx,
         limiter.into(),
