@@ -149,7 +149,7 @@ pub async fn handle_vpn_session(
 
 /// Subscribes to downstream packets
 pub fn vpn_subscribe_down(addr: Ipv4Addr) -> Receiver<Bytes> {
-    let (send_down, recv_down) = smol::channel::bounded(1000);
+    let (send_down, recv_down) = smol::channel::bounded(100);
     INCOMING_MAP.insert(addr, send_down);
     recv_down
 }
