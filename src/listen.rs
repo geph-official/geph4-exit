@@ -259,7 +259,7 @@ impl RootCtx {
                         .as_ref()
                         .and_then(|s| *s.free_limit())
                         .unwrap_or_default(),
-                    32,
+                    1024,
                 )
             })
         } else {

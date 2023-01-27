@@ -91,7 +91,7 @@ atomic_float = "0.1.0"
 
 
 [profile.release]
-# panic = "abort"
+panic = "abort"
 opt-level=3
 debug=1
 # lto=false
