@@ -79,11 +79,11 @@ impl RateLimiter {
 
     /// Waits until the given number of bytes can be let through.
     pub async fn wait(&self, bytes: usize) {
+        let bytes = ((bytes as f64) * BW_MULTIPLIER.load(Ordering::Relaxed)) as u32;
         if bytes == 0 || self.unlimited {
             return;
         }
-        let bytes = (bytes as f64) * BW_MULTIPLIER.load(Ordering::Relaxed);
-        let bytes = NonZeroU32::new(bytes as u32).unwrap();
+        let bytes = NonZeroU32::new(bytes).unwrap();
         while let Err(err) = self.inner.check_n(bytes) {
             match err {
                 NegativeMultiDecision::BatchNonConforming(_, until) => {

@@ -214,7 +214,7 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
             let p = total_usage - target_usage;
             i += p;
             i = i.clamp(-20.0, 20.0);
-            divider = 1.0 + (1.0 * p + 0.4 * i).min(100.0);
+            divider = 1.0 + (1.0 * p + 0.4 * i).min(100.0).max(0.0);
             log::info!("PID divider {divider}, p {p}, i {i}");
             BW_MULTIPLIER.store(divider as f64, Ordering::Relaxed);
         }

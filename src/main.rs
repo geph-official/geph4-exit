@@ -2,7 +2,6 @@ use std::{
     io::{Read, Write},
     net::SocketAddr,
     sync::Arc,
-    time::Duration,
 };
 
 use anyhow::Context;
@@ -11,7 +10,7 @@ use env_logger::Env;
 
 use flate2::{write::GzEncoder, Compression};
 
-use smol::{future::FutureExt, process::Command};
+use smol::process::Command;
 use structopt::StructOpt;
 
 use crate::listen::{main_loop, RootCtx};
