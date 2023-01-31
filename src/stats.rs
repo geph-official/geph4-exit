@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use async_trait::async_trait;
 use bytes::Bytes;
-use sosistab2::{Pipe, PipeStats};
+use sosistab2::Pipe;
 
 pub struct StatsPipe<P: Pipe> {
     inner: P,
@@ -35,10 +35,6 @@ impl<P: Pipe> Pipe for StatsPipe<P> {
             self.statsd_client.count(&self.flow_key, 1_000_000.0);
         }
         Ok(recved)
-    }
-
-    fn get_stats(&self) -> PipeStats {
-        self.inner.get_stats()
     }
 
     fn protocol(&self) -> &str {
