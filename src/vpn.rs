@@ -2,6 +2,7 @@ use anyhow::Context;
 use bytes::Bytes;
 
 use cidr_utils::cidr::Ipv4Cidr;
+use dashmap::DashMap;
 use futures_util::TryFutureExt;
 use libc::{c_void, SOL_IP, SO_ORIGINAL_DST};
 
@@ -25,10 +26,16 @@ use std::{
     ops::{Deref, DerefMut},
     os::unix::prelude::{AsRawFd, FromRawFd},
     sync::Arc,
+    time::Duration,
 };
 use tun::{platform::Device, Device as Device2};
 
-use crate::{connect::proxy_loop, listen::RootCtx, ratelimit::RateLimiter};
+use crate::{
+    connect::proxy_loop,
+    listen::RootCtx,
+    ratelimit::RateLimiter,
+    smartchan::{smart_channel, SmartReceiver, SmartSender},
+};
 
 /// Runs the transparent proxy helper
 pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
@@ -101,7 +108,7 @@ pub async fn handle_vpn_session(
     let assigned_ip: Lazy<AssignedIpv4Addr> = Lazy::new(|| IpAddrAssigner::global().assign());
     let addr = assigned_ip.addr();
     scopeguard::defer!({
-        INCOMING_MAP.invalidate(&addr);
+        INCOMING_MAP.remove(&addr);
     });
 
     let recv_down = vpn_subscribe_down(assigned_ip.addr());
@@ -148,8 +155,8 @@ pub async fn handle_vpn_session(
 }
 
 /// Subscribes to downstream packets
-pub fn vpn_subscribe_down(addr: Ipv4Addr) -> Receiver<Bytes> {
-    let (send_down, recv_down) = smol::channel::bounded(100);
+pub fn vpn_subscribe_down(addr: Ipv4Addr) -> SmartReceiver<Bytes> {
+    let (send_down, recv_down) = smart_channel(1000, Duration::from_millis(250));
     INCOMING_MAP.insert(addr, send_down);
     recv_down
 }
@@ -199,8 +206,7 @@ pub async fn vpn_send_up(ctx: &RootCtx, assigned_ip: Ipv4Addr, bts: &[u8]) {
 
 /// Mapping for incoming packets
 #[allow(clippy::type_complexity)]
-static INCOMING_MAP: Lazy<Cache<Ipv4Addr, Sender<Bytes>>> =
-    Lazy::new(|| Cache::builder().max_capacity(1_000_000).build());
+static INCOMING_MAP: Lazy<DashMap<Ipv4Addr, SmartSender<Bytes>>> = Lazy::new(|| DashMap::new());
 
 /// The raw TUN device.
 static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::new(|| {
@@ -233,9 +239,7 @@ static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::n
                     let dest =
                         Ipv4Packet::new(pkt).map(|pkt| INCOMING_MAP.get(&pkt.get_destination()));
                     if let Some(Some(dest)) = dest {
-                        if let Err(err) = dest.try_send(Bytes::copy_from_slice(pkt)) {
-                            log::trace!("error forwarding packet obtained from tun: {:?}", err);
-                        }
+                        dest.send_or_drop(Bytes::copy_from_slice(pkt));
                     }
                 }
             })

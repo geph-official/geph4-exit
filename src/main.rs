@@ -21,6 +21,7 @@ mod connect;
 mod listen;
 mod lists;
 mod ratelimit;
+mod smartchan;
 mod stats;
 mod vpn;
 

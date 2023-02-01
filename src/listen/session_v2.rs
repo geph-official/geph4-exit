@@ -148,7 +148,6 @@ async fn handle_conn(
                             let next = vpn_stream.recv_urel().await?;
                             let next: Vec<Bytes> = stdcode::deserialize(&next)?;
                             for next in next {
-                                limiter.wait(next.len()).await;
                                 vpn_send_up(&ctx, vpn_ipv4, &next).await;
                             }
                         }
