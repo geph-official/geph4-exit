@@ -156,7 +156,7 @@ pub async fn handle_vpn_session(
 
 /// Subscribes to downstream packets
 pub fn vpn_subscribe_down(addr: Ipv4Addr) -> SmartReceiver<Bytes> {
-    let (send_down, recv_down) = smart_channel(1000, Duration::from_millis(250));
+    let (send_down, recv_down) = smart_channel(1000, Duration::from_millis(50));
     INCOMING_MAP.insert(addr, send_down);
     recv_down
 }

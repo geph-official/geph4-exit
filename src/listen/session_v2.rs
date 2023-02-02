@@ -133,9 +133,6 @@ async fn handle_conn(
                             while let Ok(next) = downstream.try_recv() {
                                 buff.push(next.clone());
 
-                                if buff.len() >= 20 {
-                                    break;
-                                }
                                 let mut break_now = false;
                                 limiter
                                     .wait(next.len())
@@ -145,7 +142,8 @@ async fn handle_conn(
                                         smol::future::pending().await
                                     })
                                     .await;
-                                if break_now {
+
+                                if break_now || buff.len() >= 20 {
                                     break;
                                 }
                             }
