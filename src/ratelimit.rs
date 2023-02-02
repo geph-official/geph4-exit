@@ -83,6 +83,7 @@ impl RateLimiter {
         if bytes == 0 || self.unlimited {
             return;
         }
+
         let bytes = NonZeroU32::new(bytes).unwrap();
         while let Err(err) = self.inner.check_n(bytes) {
             match err {

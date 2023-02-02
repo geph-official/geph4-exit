@@ -204,10 +204,9 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
         last_bw_used = bw_used;
         let bw_usage = (bw_delta as f64 / 1000.0 / all_limit as f64) as f32;
         let total_usage = bw_usage.max(cpu_usage);
-        load_factor.store(total_usage as f64, Ordering::Relaxed);
-        if total_usage < target_usage * 0.8 {
+        let multiplier = if total_usage < target_usage * 0.8 {
             i = 0.0;
-            BW_MULTIPLIER.store(1.0, Ordering::Relaxed);
+            BW_MULTIPLIER.swap(1.0, Ordering::Relaxed)
         } else {
             log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
             log::info!("B/W PID usage: {:.2}%", bw_usage * 100.0);
@@ -216,8 +215,9 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
             i = i.clamp(-20.0, 20.0);
             divider = 1.0 + (1.0 * p + 0.4 * i).min(100.0).max(0.0);
             log::info!("PID divider {divider}, p {p}, i {i}");
-            BW_MULTIPLIER.store(divider as f64, Ordering::Relaxed);
-        }
+            BW_MULTIPLIER.swap(divider as f64, Ordering::Relaxed)
+        };
+        load_factor.store(total_usage as f64 * multiplier, Ordering::Relaxed);
     }
 }
 
