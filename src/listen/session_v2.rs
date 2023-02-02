@@ -131,11 +131,9 @@ async fn handle_conn(
                             limiter.wait(next.len()).await;
                             buff.push(next);
                             while let Ok(next) = downstream.try_recv() {
-                                if !limiter.check(next.len()) {
-                                    break;
-                                }
-                                buff.push(next);
-                                if buff.len() >= 20 {
+                                buff.push(next.clone());
+
+                                if buff.len() >= 20 || !limiter.check(next.len()) {
                                     break;
                                 }
                             }
