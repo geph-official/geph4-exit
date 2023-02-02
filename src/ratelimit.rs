@@ -97,4 +97,15 @@ impl RateLimiter {
             }
         }
     }
+
+    /// Checks whether the number of bytes can be let through.
+    pub fn check(&self, bytes: usize) -> bool {
+        let bytes = ((bytes as f64) * BW_MULTIPLIER.load(Ordering::Relaxed)) as u32;
+        if bytes == 0 || self.unlimited {
+            return true;
+        }
+
+        let bytes = NonZeroU32::new(bytes).unwrap();
+        self.inner.check_n(bytes).is_ok()
+    }
 }

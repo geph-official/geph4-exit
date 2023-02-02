@@ -128,16 +128,18 @@ async fn handle_conn(
                         loop {
                             buff.clear();
                             let next = downstream.recv().await?;
+                            limiter.wait(next.len()).await;
                             buff.push(next);
                             while let Ok(next) = downstream.try_recv() {
+                                if !limiter.check(next.len()) {
+                                    break;
+                                }
                                 buff.push(next);
                                 if buff.len() >= 20 {
                                     break;
                                 }
                             }
-                            for next in buff.iter() {
-                                limiter.wait(next.len()).await;
-                            }
+
                             vpn_stream
                                 .send_urel(stdcode::serialize(&buff)?.into())
                                 .await?;
