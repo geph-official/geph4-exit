@@ -404,6 +404,6 @@ async fn binder_upload_loop(ctx: Arc<RootCtx>, bd_template: BridgeDescriptor) ->
             log::warn!("{:?}", err);
             smol::Timer::after(Duration::from_secs(1)).await;
         }
-        smol::Timer::after(Duration::from_secs(fastrand::u64(60..120))).await;
+        smol::Timer::after(Duration::from_secs(fastrand::u64(120..200))).await;
     }
 }
