@@ -25,8 +25,6 @@ pub static STAT_LIMITER: Lazy<
     )
 });
 
-pub static TOTAL_BW_COUNT: AtomicU64 = AtomicU64::new(0);
-
 pub static BW_MULTIPLIER: AtomicF64 = AtomicF64::new(1.0);
 
 /// A generic rate limiter.

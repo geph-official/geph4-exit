@@ -9,7 +9,7 @@ use std::{
 use crate::{
     connect::sni_decode::decode_sni_from_start,
     listen::RootCtx,
-    ratelimit::{RateLimiter, STAT_LIMITER, TOTAL_BW_COUNT},
+    ratelimit::{RateLimiter, STAT_LIMITER},
 };
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
@@ -104,16 +104,7 @@ pub async fn proxy_loop(
             } else {
                 "".into()
             };
-            move |n| {
-                if count_stats {
-                    TOTAL_BW_COUNT.fetch_add(n as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        if let Some(op) = ctx.stat_client.as_ref().as_ref() {
-                            op.count(&key, TOTAL_BW_COUNT.swap(0, Ordering::Relaxed) as f64)
-                        }
-                    }
-                }
-            }
+            move |n| ctx.incr_throughput(n)
         });
 
         // Read the initial burst
