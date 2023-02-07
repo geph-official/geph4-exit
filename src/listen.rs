@@ -223,12 +223,10 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
 
 impl RootCtx {
     pub fn incr_throughput(&self, delta: usize) {
-        let curr = self.stat_count.fetch_add(delta as u64, Ordering::Relaxed);
-        if curr > 1_000_000 {
+        if fastrand::f64() < delta as f64 / 1_000_000.0 {
             if let Some(client) = self.stat_client.as_ref() {
-                let curr = self.stat_count.swap(0, Ordering::Relaxed);
                 let stat_key = format!("exit_usage.{}", self.exit_hostname_dashed());
-                client.count(&stat_key, curr as f64);
+                client.count(&stat_key, 1_000_000.0);
             }
         }
     }
