@@ -99,11 +99,6 @@ pub async fn proxy_loop(
         // Upload official stats
         let upload_stat = Arc::new({
             let ctx = ctx.clone();
-            let key = if let Some(off) = ctx.config.official() {
-                format!("exit_usage.{}", off.exit_hostname().replace('.', "-"))
-            } else {
-                "".into()
-            };
             move |n| ctx.incr_throughput(n)
         });
 

@@ -128,9 +128,11 @@ async fn handle_conn(
                         loop {
                             buff.clear();
                             let next = downstream.recv().await?;
+                            ctx.incr_throughput(next.len());
                             limiter.wait(next.len()).await;
                             buff.push(next);
                             while let Ok(next) = downstream.try_recv() {
+                                ctx.incr_throughput(next.len());
                                 buff.push(next.clone());
 
                                 let mut break_now = false;
@@ -156,6 +158,7 @@ async fn handle_conn(
                     let recv_loop = async {
                         loop {
                             let next = vpn_stream.recv_urel().await?;
+                            ctx.incr_throughput(next.len());
                             let next: Vec<Bytes> = stdcode::deserialize(&next)?;
                             for next in next {
                                 vpn_send_up(&ctx, vpn_ipv4, &next).await;
