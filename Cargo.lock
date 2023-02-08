@@ -57,6 +57,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "ahash"
+version = "0.8.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
+dependencies = [
+ "cfg-if 1.0.0",
+ "getrandom 0.2.8",
+ "once_cell",
+ "version_check",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "0.7.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1545,7 +1557,7 @@ dependencies = [
  "futures-sink",
  "nanorand",
  "pin-project",
- "spin 0.9.4",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -2748,9 +2760,9 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
 name = "openssl-src"
-version = "111.24.0+1.1.1s"
+version = "111.25.0+1.1.1t"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3498f259dab01178c6228c6b00dcef0ed2a2d5e20d648c017861227773ea4abd"
+checksum = "3173cd3626c43e3854b1b727422a276e568d9ec5fe8cec197822cf52cfb743d6"
 dependencies = [
  "cc",
 ]
@@ -3424,7 +3436,7 @@ dependencies = [
  "lru 0.7.8",
  "parking_lot 0.11.2",
  "smallvec",
- "spin 0.9.4",
+ "spin 0.9.5",
 ]
 
 [[package]]
@@ -4140,10 +4152,11 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.8.6"
+version = "0.8.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c5b262e29b70e6de908858edb1c26e0ad83adf5f50c80f538b99b75f51895502"
+checksum = "a00fd1525d6c7add1506a38e97a76de11ac31f57ceb5018bc99b76cc4d8bb628"
 dependencies = [
+ "ahash 0.8.3",
  "anyhow",
  "arc-swap",
  "arrayref",
@@ -4178,7 +4191,6 @@ dependencies = [
  "reed-solomon-erasure",
  "replay_filter",
  "ring",
- "rustc-hash",
  "scopeguard",
  "serde",
  "slab",
@@ -4212,9 +4224,9 @@ checksum = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 
 [[package]]
 name = "spin"
-version = "0.9.4"
+version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f6002a767bff9e83f8eeecf883ecb8011875a21ae8da43bffb817a57e78cc09"
+checksum = "7dccf47db1b41fa1573ed27ccf5e08e3ca771cb994f776668c5ebda893b248fc"
 dependencies = [
  "lock_api",
 ]
@@ -4609,9 +4621,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-native-tls"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7d995660bd2b7f8c1568414c1126076c13fbb725c40112dc0120b78eb9b717b"
+checksum = "bbae76ab933c85776efabc971569dd6119c580d8f5d448769dec1764bf796ef2"
 dependencies = [
  "native-tls",
  "tokio",
