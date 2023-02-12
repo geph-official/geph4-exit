@@ -461,6 +461,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let taskkey = format!("task_count.{}", exit_hostname.replace('.', "-"));
         let hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
         let cpukey = format!("cpu_usage.{}", exit_hostname.replace('.', "-"));
+        let loadkey = format!("load_factor.{}", exit_hostname.replace('.', "-"));
         let mut sys = System::new_all();
 
         loop {
@@ -488,6 +489,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 stat_client.gauge(&threadkey, thread_count as f64);
                 stat_client.gauge(&hijackkey, ctx.sess_replacers.len() as f64);
                 stat_client.gauge(&cpukey, usage as f64);
+                stat_client.gauge(&loadkey, BW_MULTIPLIER.load(Ordering::Relaxed));
             }
             smol::Timer::after(Duration::from_secs(10)).await;
         }
