@@ -270,7 +270,6 @@ impl BridgeExitProtocol for ControlService {
         };
 
         if let Some((exit_addr, _)) = self.bridge_to_manager.get(&(protocol, bridge_addr)) {
-            log::debug!("b2e hit {bridge_addr} => {exit_addr}");
             exit_addr
         } else {
             let cookie = *blake3::hash(
