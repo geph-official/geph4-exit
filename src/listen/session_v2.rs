@@ -48,9 +48,8 @@ pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
     static BIG_MULTIPLEX_TABLE: Lazy<DashMap<blake3::Hash, TableEntry>> =
         Lazy::new(Default::default);
     let key = blake3::hash(pipe.peer_metadata().as_bytes());
-    log::debug!("sesh: {}", key);
+
     let mplex = BIG_MULTIPLEX_TABLE.entry(key).or_insert_with(move || {
-        log::debug!("sesh MISS: {}", key);
         // TODO actually put this SK somewhere
         let mplex = Arc::new(sosistab2::Multiplex::new(ctx.sosistab2_sk.clone(), None));
         mplex.add_drop_friend(scopeguard::guard((), move |_| {
@@ -105,7 +104,7 @@ async fn handle_conn(
     sess_random: u64,
 ) -> anyhow::Result<()> {
     let hostname = stream.additional_info();
-    log::debug!("req for {hostname}");
+
     if hostname == CLIENT_EXIT_PSEUDOHOST {
         // also run the VPN!
         let vpn_stream = stream.clone();
