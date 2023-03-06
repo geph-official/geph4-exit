@@ -25,6 +25,7 @@ use sosistab2::MuxStream;
 use stdcode::StdcodeSerializeExt;
 
 use std::{
+    mem::size_of_val,
     net::Ipv4Addr,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -85,17 +86,15 @@ async fn handle_session_v2(
                 .timeout(Duration::from_secs(3600))
                 .await
                 .context("timeout")??;
-
-            exec.spawn(
-                handle_conn(
-                    ctx.clone(),
-                    client_exit.clone(),
-                    conn,
-                    rand::thread_rng().gen(),
-                )
-                .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e)),
+            let to_spawn = handle_conn(
+                ctx.clone(),
+                client_exit.clone(),
+                conn,
+                rand::thread_rng().gen(),
             )
-            .detach();
+            .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
+            log::debug!("spawning future of {} bytes", size_of_val(&to_spawn));
+            exec.spawn(to_spawn).detach();
         }
     })
     .await
