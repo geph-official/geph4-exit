@@ -103,7 +103,7 @@ pub async fn proxy_loop(
         });
 
         // Read the initial burst
-        let mut initial_burst = [0u8; 65536];
+        let mut initial_burst = vec![0u8; 16384];
         let initial_burst = if ctx.config.random_ipv6_range().is_some() {
             if let Some(Ok(n)) = client
                 .read(&mut initial_burst)
