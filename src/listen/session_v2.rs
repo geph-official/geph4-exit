@@ -93,7 +93,7 @@ async fn handle_session_v2(
                 rand::thread_rng().gen(),
             )
             .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
-            log::debug!("spawning future of {} bytes", size_of_val(&to_spawn));
+            log::trace!("spawning future of {} bytes", size_of_val(&to_spawn));
             exec.spawn(to_spawn).detach();
         }
     })
