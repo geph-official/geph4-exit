@@ -10,7 +10,7 @@ use env_logger::Env;
 
 use flate2::{write::GzEncoder, Compression};
 
-//use jemallocator::Jemalloc;
+use jemallocator::Jemalloc;
 use smol::process::Command;
 use structopt::StructOpt;
 
@@ -26,8 +26,8 @@ mod smartchan;
 mod stats;
 mod vpn;
 
-//##[global_allocator]
-//static GLOBAL: Jemalloc = Jemalloc;
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
 
 #[derive(Debug, StructOpt, Clone)]
 struct Opt {

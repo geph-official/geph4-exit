@@ -16,11 +16,11 @@ use smol::{
     future::FutureExt,
     io::{AsyncBufReadExt, BufReader},
     stream::StreamExt,
-    Task,
+    Executor, Task,
 };
 
 use smol_timeout::TimeoutExt;
-use smolscale::reaper::TaskReaper;
+
 use sosistab2::MuxStream;
 use stdcode::StdcodeSerializeExt;
 
@@ -77,24 +77,28 @@ async fn handle_session_v2(
         ctx.clone(),
         vpn_ipv4.map(|v| v.addr()),
     )));
-    let reaper = TaskReaper::new();
-    loop {
-        let conn = mux
-            .accept_conn()
-            .timeout(Duration::from_secs(3600))
-            .await
-            .context("timeout")??;
+    let exec = Executor::new();
+    exec.run(async {
+        loop {
+            let conn = mux
+                .accept_conn()
+                .timeout(Duration::from_secs(3600))
+                .await
+                .context("timeout")??;
 
-        reaper.attach(smolscale::spawn(
-            handle_conn(
-                ctx.clone(),
-                client_exit.clone(),
-                conn,
-                rand::thread_rng().gen(),
+            exec.spawn(
+                handle_conn(
+                    ctx.clone(),
+                    client_exit.clone(),
+                    conn,
+                    rand::thread_rng().gen(),
+                )
+                .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e)),
             )
-            .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e)),
-        ));
-    }
+            .detach();
+        }
+    })
+    .await
 }
 
 async fn handle_conn(

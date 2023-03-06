@@ -88,7 +88,7 @@ native-tls = "0.2.11"
 rcgen = "0.10.0"
 priority-async-mutex = "0.1.1"
 atomic_float = "0.1.0"
-#jemallocator = "0.5.0"
+jemallocator = "0.5.0"
 # jemallocator-global = "0.3.2"
 
 
