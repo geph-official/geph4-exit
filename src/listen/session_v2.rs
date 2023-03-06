@@ -195,7 +195,7 @@ async fn handle_conn(
     let limiter = client_exit
         .0
         .limiter()
-        .unwrap_or_else(|| RateLimiter::unlimited());
+        .unwrap_or_else(RateLimiter::unlimited);
     proxy_loop(
         ctx,
         limiter.into(),
@@ -204,6 +204,7 @@ async fn handle_conn(
         hostname.into(),
         true,
     )
+    .boxed()
     .await?;
     Ok(())
 }
