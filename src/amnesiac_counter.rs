@@ -1,11 +1,14 @@
-use std::time::{Duration, Instant};
+use std::{
+    cmp::Reverse,
+    time::{Duration, Instant},
+};
 
 use parking_lot::Mutex;
 use priority_queue::PriorityQueue;
 
 pub struct AmnesiacCounter {
     ttl: Duration,
-    id_map: Mutex<PriorityQueue<u64, Instant>>,
+    id_map: Mutex<PriorityQueue<u64, Reverse<Instant>>>,
 }
 
 impl AmnesiacCounter {
@@ -19,7 +22,7 @@ impl AmnesiacCounter {
 
     /// Inserts a new id.
     pub fn insert(&self, id: u64) {
-        self.id_map.lock().push(id, Instant::now());
+        self.id_map.lock().push(id, Reverse(Instant::now()));
     }
 
     /// Returns the count.
@@ -27,7 +30,7 @@ impl AmnesiacCounter {
         let mut map = self.id_map.lock();
         while map
             .peek()
-            .map(|p| p.1.elapsed() > self.ttl)
+            .map(|p| p.1 .0.elapsed() > self.ttl)
             .unwrap_or_default()
         {
             map.pop();
