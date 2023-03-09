@@ -50,8 +50,7 @@ pub struct RootCtx {
 
     pub sosistab2_sk: MuxSecret,
 
-    session_count: AtomicUsize,
-    raw_session_count: AtomicUsize,
+    session_counter: Cache<u64, ()>,
     pub conn_count: AtomicUsize,
     pub control_count: AtomicUsize,
 
@@ -146,8 +145,9 @@ impl From<Config> for RootCtx {
 
             load_factor: load_factor.clone(),
 
-            session_count: Default::default(),
-            raw_session_count: Default::default(),
+            session_counter: Cache::builder()
+                .time_to_live(Duration::from_secs(300))
+                .build(),
             conn_count: Default::default(),
             control_count: Default::default(),
 
@@ -208,6 +208,10 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
 }
 
 impl RootCtx {
+    pub fn session_keepalive(&self, id: u64) {
+        self.session_counter.insert(id, ());
+    }
+
     pub fn incr_throughput(&self, delta: usize) {
         if fastrand::f64() < delta as f64 / 1_000_000.0 {
             if let Some(client) = self.stat_client.as_ref() {
@@ -351,12 +355,9 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 let cpus = sys.cpus();
                 let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
 
-                let session_count = ctx.session_count.load(std::sync::atomic::Ordering::Relaxed);
+                let session_count = ctx.session_counter.entry_count();
                 stat_client.gauge(&key, session_count as f64);
-                let raw_session_count = ctx
-                    .raw_session_count
-                    .load(std::sync::atomic::Ordering::Relaxed);
-                stat_client.gauge(&rskey, raw_session_count as f64);
+
                 let memory_usage = sys.total_memory() - sys.available_memory();
                 stat_client.gauge(&memkey, memory_usage as f64);
                 let conn_count = ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed);

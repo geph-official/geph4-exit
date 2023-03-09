@@ -80,12 +80,14 @@ async fn handle_session_v2(
     )));
     let exec = Executor::new();
     exec.run(async {
+        let id = rand::thread_rng().gen();
         loop {
             let conn = mux
                 .accept_conn()
                 .timeout(Duration::from_secs(3600))
                 .await
                 .context("timeout")??;
+            ctx.session_keepalive(id);
             let to_spawn = handle_conn(
                 ctx.clone(),
                 client_exit.clone(),
