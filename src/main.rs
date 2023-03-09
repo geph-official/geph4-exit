@@ -1,16 +1,9 @@
-use std::{
-    io::{Read, Write},
-    net::SocketAddr,
-    sync::Arc,
-};
+use std::{io::Read, net::SocketAddr, sync::Arc};
 
 use anyhow::Context;
 use config::Config;
 use env_logger::Env;
 
-use flate2::{write::GzEncoder, Compression};
-
-use jemallocator::Jemalloc;
 use smol::process::Command;
 use structopt::StructOpt;
 
@@ -26,8 +19,8 @@ mod smartchan;
 mod stats;
 mod vpn;
 
-#[global_allocator]
-static GLOBAL: Jemalloc = Jemalloc;
+// #[global_allocator]
+// static GLOBAL: Jemalloc = Jemalloc;
 
 #[derive(Debug, StructOpt, Clone)]
 struct Opt {
@@ -61,24 +54,6 @@ fn main() -> anyhow::Result<()> {
         "read configuration file:\n{}",
         serde_json::to_string_pretty(&config)?
     );
-
-    if let Some(trace) = config.sosistab_trace().as_ref() {
-        let (send, recv) = flume::unbounded();
-        log::info!("writing gzipped sosistab traces to {:?}", trace);
-        sosistab::init_packet_tracing(move |line| send.send(line).unwrap());
-        let trace = trace.clone();
-        std::thread::Builder::new()
-            .name("trace-writer".into())
-            .spawn(move || {
-                let file = std::fs::File::create(&trace).expect("cannot create trace file");
-                let mut file = GzEncoder::new(file, Compression::best());
-                loop {
-                    let line = recv.recv().unwrap();
-                    writeln!(file, "{}", line).expect("cannot write line to file");
-                }
-            })
-            .unwrap();
-    }
 
     if let Some(nat_interface) = config.nat_external_iface().as_ref() {
         config_iptables(

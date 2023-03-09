@@ -1,29 +1,11 @@
 use atomic_float::AtomicF64;
 use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
-use once_cell::sync::Lazy;
+
 use std::{
     num::NonZeroU32,
-    sync::{
-        atomic::{AtomicU64, Ordering},
-        Arc,
-    },
-    time::{Duration, Instant},
+    sync::{atomic::Ordering, Arc},
+    time::Duration,
 };
-
-pub static STAT_LIMITER: Lazy<
-    governor::RateLimiter<
-        NotKeyed,
-        governor::state::InMemoryState,
-        governor::clock::MonotonicClock,
-    >,
-> = Lazy::new(|| {
-    let limit = NonZeroU32::new(10).unwrap();
-    governor::RateLimiter::new(
-        Quota::per_second(limit).allow_burst(NonZeroU32::new(1000).unwrap()),
-        governor::state::InMemoryState::default(),
-        &governor::clock::MonotonicClock::default(),
-    )
-});
 
 pub static BW_MULTIPLIER: AtomicF64 = AtomicF64::new(1.0);
 
@@ -68,11 +50,6 @@ impl RateLimiter {
             inner,
             unlimited: true,
         }
-    }
-
-    /// Checks whether the limiter is unlimited.
-    pub fn is_unlimited(&self) -> bool {
-        self.unlimited
     }
 
     /// Waits until the given number of bytes can be let through.

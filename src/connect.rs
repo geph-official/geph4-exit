@@ -2,15 +2,11 @@ mod sni_decode;
 
 use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6},
-    sync::{atomic::Ordering, Arc},
+    sync::{Arc},
     time::Duration,
 };
 
-use crate::{
-    connect::sni_decode::decode_sni_from_start,
-    listen::RootCtx,
-    ratelimit::{RateLimiter, STAT_LIMITER},
-};
+use crate::{connect::sni_decode::decode_sni_from_start, listen::RootCtx, ratelimit::RateLimiter};
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
 
@@ -63,7 +59,7 @@ pub async fn proxy_loop(
     mut client: impl AsyncRead + AsyncWrite + Clone + Unpin + Send + 'static,
     client_id: u64,
     addr: String,
-    count_stats: bool,
+    _count_stats: bool,
 ) -> anyhow::Result<()> {
     let f = async move {
         // Incr/decr the connection count

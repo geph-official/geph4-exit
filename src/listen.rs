@@ -1,7 +1,7 @@
 use std::{
     net::{IpAddr, SocketAddr},
     sync::{
-        atomic::{AtomicU64, AtomicUsize, Ordering},
+        atomic::{AtomicUsize, Ordering},
         Arc,
     },
     time::{Duration, Instant, SystemTime},
@@ -11,7 +11,7 @@ use crate::{
     asn::MY_PUBLIC_IP,
     config::Config,
     listen::control::dummy_tls_config,
-    ratelimit::{RateLimiter, BW_MULTIPLIER, STAT_LIMITER},
+    ratelimit::{RateLimiter, BW_MULTIPLIER},
     stats::StatsPipe,
     vpn,
 };
@@ -20,7 +20,6 @@ use bytes::Bytes;
 use ed25519_dalek::{ed25519::signature::Signature, Signer};
 use event_listener::Event;
 
-use dashmap::DashMap;
 use geph4_protocol::{
     binder::{
         client::E2eeHttpTransport,
@@ -30,17 +29,15 @@ use geph4_protocol::{
 };
 
 use moka::sync::Cache;
-use smol::{channel::Sender, fs::unix::PermissionsExt, prelude::*, Task};
+use smol::{fs::unix::PermissionsExt, prelude::*, Task};
 
-use sosistab::Session;
 use sosistab2::{MuxSecret, ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
 use sysinfo::{CpuExt, System, SystemExt};
-use x25519_dalek::StaticSecret;
 
 use self::{control::ControlService, session_v2::handle_pipe_v2};
 
 mod control;
-mod session_legacy;
+
 mod session_v2;
 /// the root context
 pub struct RootCtx {
@@ -50,7 +47,6 @@ pub struct RootCtx {
     binder_client: Option<Arc<BinderClient>>,
     // bridge_secret: String,
     signing_sk: ed25519_dalek::Keypair,
-    sosistab_sk: x25519_dalek::StaticSecret,
 
     pub sosistab2_sk: MuxSecret,
 
@@ -59,18 +55,11 @@ pub struct RootCtx {
     pub conn_count: AtomicUsize,
     pub control_count: AtomicUsize,
 
-    // free_limit: u32,
-    // pub port_whitelist: bool,
-
-    // pub google_proxy: Option<SocketAddr>,
-    pub sess_replacers: DashMap<[u8; 32], Sender<Session>>,
     pub kill_event: Event,
 
     pub load_factor: Arc<AtomicF64>,
 
     mass_ratelimits: Cache<u64, RateLimiter>,
-
-    stat_count: AtomicU64,
 
     _task: Task<()>,
 }
@@ -131,7 +120,6 @@ impl From<Config> for RootCtx {
             }
         };
         log::info!("signing_sk = {}", hex::encode(signing_sk.public));
-        let sosistab_sk = x25519_dalek::StaticSecret::from(*signing_sk.secret.as_bytes());
 
         let load_factor = Arc::new(AtomicF64::new(0.0));
         Self {
@@ -153,7 +141,7 @@ impl From<Config> for RootCtx {
                 bclient
             }),
             signing_sk,
-            sosistab_sk,
+
             sosistab2_sk,
 
             load_factor: load_factor.clone(),
@@ -163,9 +151,7 @@ impl From<Config> for RootCtx {
             conn_count: Default::default(),
             control_count: Default::default(),
 
-            sess_replacers: Default::default(),
             kill_event: Event::new(),
-            stat_count: AtomicU64::new(0),
 
             mass_ratelimits: Cache::builder()
                 .time_to_idle(Duration::from_secs(86400))
@@ -265,89 +251,6 @@ impl RootCtx {
                 .get_with(key.rotate_left(3), || RateLimiter::new(1903, 5_000_000))
         }
     }
-
-    fn new_sess(self: &Arc<Self>, sess: sosistab::Session) -> SessCtx {
-        SessCtx {
-            root: self.clone(),
-            sess,
-        }
-    }
-
-    async fn listen_udp(
-        &self,
-        sk: Option<StaticSecret>,
-        addr: SocketAddr,
-        flow_key: &str,
-    ) -> std::io::Result<sosistab::Listener> {
-        let stat = self.stat_client.clone();
-        let stat2 = self.stat_client.clone();
-        let flow_key = flow_key.to_owned();
-        let fk2 = flow_key.clone();
-        let long_sk = if let Some(sk) = sk {
-            sk
-        } else {
-            self.sosistab_sk.clone()
-        };
-        let stat_count = Arc::new(AtomicU64::new(0));
-        let sc2 = stat_count.clone();
-        sosistab::Listener::listen_udp(
-            addr,
-            long_sk,
-            move |len, _| {
-                if let Some(stat) = stat.as_ref() {
-                    stat_count.fetch_add(len as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        stat.count(&flow_key, stat_count.swap(0, Ordering::Relaxed) as f64)
-                    }
-                }
-            },
-            move |len, _| {
-                if let Some(stat2) = stat2.as_ref() {
-                    sc2.fetch_add(len as u64, Ordering::Relaxed);
-                    if fastrand::f64() < 0.01 && STAT_LIMITER.check().is_ok() {
-                        stat2.count(&fk2, sc2.swap(0, Ordering::Relaxed) as f64)
-                    }
-                }
-            },
-        )
-        .await
-    }
-
-    async fn listen_tcp(
-        &self,
-        sk: Option<StaticSecret>,
-        addr: SocketAddr,
-        flow_key: &str,
-    ) -> std::io::Result<sosistab::Listener> {
-        let stat = self.stat_client.clone();
-        let stat2 = self.stat_client.clone();
-        let flow_key = flow_key.to_owned();
-        let fk2 = flow_key.clone();
-        let long_sk = if let Some(sk) = sk {
-            sk
-        } else {
-            self.sosistab_sk.clone()
-        };
-        sosistab::Listener::listen_tcp(
-            addr,
-            long_sk,
-            move |len, _| {
-                if let Some(stat) = stat.as_ref() {
-                    if fastrand::f32() < 0.05 {
-                        stat.count(&flow_key, len as f64 * 20.0)
-                    }
-                }
-            },
-            move |len, _| {
-                if let Some(stat2) = stat2.as_ref() {
-                    if fastrand::f32() < 0.05 {
-                        stat2.count(&fk2, len as f64 * 20.0)
-                    }
-                }
-            },
-        )
-        .await
-    }
 }
 
 async fn idlejitter(ctx: Arc<RootCtx>) {
@@ -377,12 +280,6 @@ async fn killconn(ctx: Arc<RootCtx>) {
         }
         smol::Timer::after(Duration::from_secs(5)).await;
     }
-}
-
-/// per-session context
-pub struct SessCtx {
-    root: Arc<RootCtx>,
-    sess: sosistab::Session,
 }
 
 /// the main listening loop
@@ -432,24 +329,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             bridge_group.replace('.', "-")
         )
     };
-    // future that governs the "self bridge"
-    let ctx1 = ctx.clone();
-    let self_bridge_fut = async {
-        let flow_key = bridge_pkt_key("SELF");
-        let listen_addr: SocketAddr = ctx.config.sosistab_listen().parse().unwrap();
 
-        let udp_listen = ctx.listen_udp(None, listen_addr, &flow_key).await.unwrap();
-        let tcp_listen = ctx.listen_tcp(None, listen_addr, &flow_key).await.unwrap();
-        loop {
-            let sess = udp_listen
-                .accept_session()
-                .race(tcp_listen.accept_session())
-                .await
-                .expect("can't accept from sosistab");
-            let ctx1 = ctx1.clone();
-            smolscale::spawn(session_legacy::handle_session_legacy(ctx1.new_sess(sess))).detach();
-        }
-    };
     // future that uploads gauge statistics
     let gauge_fut = async {
         let key = format!("session_count.{}", exit_hostname.replace('.', "-"));
@@ -459,7 +339,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
         let threadkey = format!("thread_key.{}", exit_hostname.replace('.', "-"));
         let ctrlkey = format!("control_count.{}", exit_hostname.replace('.', "-"));
         let taskkey = format!("task_count.{}", exit_hostname.replace('.', "-"));
-        let hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
+        let _hijackkey = format!("hijackers.{}", exit_hostname.replace('.', "-"));
         let cpukey = format!("cpu_usage.{}", exit_hostname.replace('.', "-"));
         let loadkey = format!("load_factor.{}", exit_hostname.replace('.', "-"));
         let mut sys = System::new_all();
@@ -487,7 +367,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 let thread_count = smolscale::running_threads();
                 stat_client.gauge(&taskkey, task_count as f64);
                 stat_client.gauge(&threadkey, thread_count as f64);
-                stat_client.gauge(&hijackkey, ctx.sess_replacers.len() as f64);
+
                 stat_client.gauge(&cpukey, usage as f64);
                 stat_client.gauge(&loadkey, BW_MULTIPLIER.load(Ordering::Relaxed));
             }
@@ -618,8 +498,5 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     };
 
     // race
-    smol::future::race(control_prot_fut, self_bridge_fut)
-        .or(gauge_fut)
-        .or(pipe_listen_fut)
-        .await
+    control_prot_fut.or(gauge_fut).or(pipe_listen_fut).await
 }

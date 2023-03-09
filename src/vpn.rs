@@ -15,15 +15,11 @@ use pnet_packet::{
     ip::IpNextHeaderProtocols, ipv4::Ipv4Packet, tcp::TcpPacket, udp::UdpPacket, Packet,
 };
 use rand::prelude::*;
-use smol::channel::{Receiver, Sender};
-use sosistab::BuffMut;
-
-use geph4_protocol::VpnMessage;
 use std::{
     collections::HashSet,
     io::{Read, Write},
     net::{IpAddr, Ipv4Addr, SocketAddr},
-    ops::{Deref, DerefMut},
+    ops::Deref,
     os::unix::prelude::{AsRawFd, FromRawFd},
     sync::Arc,
     time::Duration,
@@ -90,70 +86,6 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
     }
 }
 
-/// Handles a VPN session
-pub async fn handle_vpn_session(
-    ctx: Arc<RootCtx>,
-    mux: Arc<sosistab::Multiplex>,
-    rate_limit: Arc<RateLimiter>,
-    on_activity: impl Fn(),
-) -> anyhow::Result<()> {
-    if ctx.config.nat_external_iface().is_none() {
-        log::warn!("disabling VPN mode since external interface is not specified!");
-        return smol::future::pending().await;
-    }
-    log::debug!("handle_vpn_session entered");
-    scopeguard::defer!(log::trace!("handle_vpn_session exited"));
-
-    // set up IP address allocation
-    let assigned_ip: Lazy<AssignedIpv4Addr> = Lazy::new(|| IpAddrAssigner::global().assign());
-    let addr = assigned_ip.addr();
-    scopeguard::defer!({
-        INCOMING_MAP.remove(&addr);
-    });
-
-    let recv_down = vpn_subscribe_down(assigned_ip.addr());
-    let _down_task: smol::Task<anyhow::Result<()>> = {
-        let ctx = ctx.clone();
-        let mux = mux.clone();
-        smolscale::spawn(async move {
-            loop {
-                let bts = recv_down.recv().await?;
-                ctx.incr_throughput(bts.len());
-                rate_limit.wait(bts.len()).await;
-                let pkt = Ipv4Packet::new(&bts).expect("don't send me invalid IPv4 packets!");
-                assert_eq!(pkt.get_destination(), addr);
-                let msg = VpnMessage::Payload(Bytes::copy_from_slice(&bts));
-                let mut to_send = BuffMut::new();
-                bincode::serialize_into(to_send.deref_mut(), &msg).unwrap();
-                let _ = mux.send_urel(to_send).await;
-            }
-        })
-    };
-
-    loop {
-        let bts = mux.recv_urel().await?;
-        on_activity();
-        let msg: VpnMessage = bincode::deserialize(&bts)?;
-        match msg {
-            VpnMessage::ClientHello { .. } => {
-                mux.send_urel(
-                    bincode::serialize(&VpnMessage::ServerHello {
-                        client_ip: *assigned_ip.clone(),
-                        gateway: "100.64.0.1".parse().unwrap(),
-                    })
-                    .unwrap()
-                    .as_slice(),
-                )
-                .await?;
-            }
-            VpnMessage::Payload(bts) => {
-                vpn_send_up(&ctx, assigned_ip.addr(), &bts).await;
-            }
-            _ => anyhow::bail!("message in invalid context"),
-        }
-    }
-}
-
 /// Subscribes to downstream packets
 pub fn vpn_subscribe_down(addr: Ipv4Addr) -> SmartReceiver<Bytes> {
     let (send_down, recv_down) = smart_channel(1000, Duration::from_millis(50));
@@ -206,7 +138,7 @@ pub async fn vpn_send_up(ctx: &RootCtx, assigned_ip: Ipv4Addr, bts: &[u8]) {
 
 /// Mapping for incoming packets
 #[allow(clippy::type_complexity)]
-static INCOMING_MAP: Lazy<DashMap<Ipv4Addr, SmartSender<Bytes>>> = Lazy::new(|| DashMap::new());
+static INCOMING_MAP: Lazy<DashMap<Ipv4Addr, SmartSender<Bytes>>> = Lazy::new(DashMap::new);
 
 /// The raw TUN device.
 static RAW_TUN_WRITE: Lazy<Box<dyn Fn(&[u8]) + Send + Sync + 'static>> = Lazy::new(|| {
