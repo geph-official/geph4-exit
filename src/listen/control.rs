@@ -65,6 +65,10 @@ async fn forward_and_upload(
     listener: impl PipeListener + Send + Sync + 'static,
     bd_template: BridgeDescriptor,
 ) -> Infallible {
+    ctx.control_count.fetch_add(1, Ordering::Relaxed);
+    scopeguard::defer!({
+        ctx.control_count.fetch_sub(1, Ordering::Relaxed);
+    });
     let bridge_pkt_key = {
         let exit_hostname = ctx.exit_hostname_dashed();
         move |bridge_group: &str| {
