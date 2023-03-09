@@ -8,6 +8,7 @@ use std::{
 };
 
 use crate::{
+    amnesiac_counter::AmnesiacCounter,
     asn::MY_PUBLIC_IP,
     config::Config,
     listen::control::dummy_tls_config,
@@ -50,7 +51,7 @@ pub struct RootCtx {
 
     pub sosistab2_sk: MuxSecret,
 
-    session_counter: Cache<u64, ()>,
+    session_counter: AmnesiacCounter,
     pub conn_count: AtomicUsize,
     pub control_count: AtomicUsize,
 
@@ -145,9 +146,7 @@ impl From<Config> for RootCtx {
 
             load_factor: load_factor.clone(),
 
-            session_counter: Cache::builder()
-                .time_to_live(Duration::from_secs(300))
-                .build(),
+            session_counter: AmnesiacCounter::new(Duration::from_secs(300)),
             conn_count: Default::default(),
             control_count: Default::default(),
 
@@ -209,7 +208,7 @@ async fn set_ratelimit_loop(load_factor: Arc<AtomicF64>, iface_name: String, all
 
 impl RootCtx {
     pub fn session_keepalive(&self, id: u64) {
-        self.session_counter.insert(id, ());
+        self.session_counter.insert(id);
     }
 
     pub fn incr_throughput(&self, delta: usize) {
@@ -355,7 +354,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 let cpus = sys.cpus();
                 let usage = cpus.iter().map(|c| c.cpu_usage()).sum::<f32>() / cpus.len() as f32;
 
-                let session_count = ctx.session_counter.entry_count();
+                let session_count = ctx.session_counter.count();
                 stat_client.gauge(&key, session_count as f64);
 
                 let memory_usage = sys.total_memory() - sys.available_memory();

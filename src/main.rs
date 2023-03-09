@@ -9,6 +9,7 @@ use structopt::StructOpt;
 
 use crate::listen::{main_loop, RootCtx};
 
+mod amnesiac_counter;
 mod asn;
 mod config;
 mod connect;
