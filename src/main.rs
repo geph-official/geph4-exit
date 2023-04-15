@@ -20,8 +20,8 @@ mod smartchan;
 mod stats;
 mod vpn;
 
-// #[global_allocator]
-// static GLOBAL: Jemalloc = Jemalloc;
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 #[derive(Debug, StructOpt, Clone)]
 struct Opt {
