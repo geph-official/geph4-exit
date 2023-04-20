@@ -389,9 +389,9 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                 .expect("cannot parse sosistab2 listening address");
 
             let udp_listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
-            let tls_cookie = Bytes::copy_from_slice(secret.to_public().as_bytes());
+            let cookie = Bytes::copy_from_slice(secret.to_public().as_bytes());
             let tls_listener =
-                ObfsTlsListener::bind(listen_addr, dummy_tls_config(), tls_cookie.clone())
+                ObfsTlsListener::bind(listen_addr, dummy_tls_config(), cookie.clone())
                     .await
                     .unwrap();
             // Upload a "self-bridge". sosistab2 bridges have the key field be the bincode-encoded pair of bridge key and e2e key
@@ -408,12 +408,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     (*MY_PUBLIC_IP).into(),
                                     listen_addr.port(),
                                 ),
-                                sosistab_key: bincode::serialize(&(
-                                    secret.to_public(),
-                                    ctx.sosistab2_sk.to_public(),
-                                ))
-                                .unwrap()
-                                .into(),
+                                sosistab_key: cookie.clone(),
                                 exit_hostname: ctx
                                     .config
                                     .official()
@@ -441,7 +436,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     (*MY_PUBLIC_IP).into(),
                                     listen_addr.port(),
                                 ),
-                                sosistab_key: tls_cookie.clone(),
+                                sosistab_key: cookie.clone(),
                                 exit_hostname: ctx.exit_hostname().into(),
                                 alloc_group: "direct".into(),
                                 update_time: SystemTime::now()
