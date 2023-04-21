@@ -467,11 +467,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
             // we now enter the usual feeding loop
             log::info!(
                 "listening on {}@{}:{}",
-                hex::encode(
-                    ObfsUdpSecret::from_bytes(ctx.sosistab2_sk.to_bytes())
-                        .to_public()
-                        .as_bytes()
-                ),
+                hex::encode(ctx.sosistab2_sk.to_public().as_bytes()),
                 if listen_addr.ip().is_unspecified() {
                     IpAddr::from(*MY_PUBLIC_IP)
                 } else {
