@@ -222,12 +222,7 @@ impl BridgeExitProtocol for ControlService {
                                 is_direct: false,
                                 protocol: "sosistab2-obfsudp".into(),
                                 endpoint: bridge_addr,
-                                sosistab_key: bincode::serialize(&(
-                                    secret_key.to_public(),
-                                    ctx.sosistab2_sk.to_public(),
-                                ))
-                                .unwrap()
-                                .into(),
+                                sosistab_key: secret_key.to_public(),
                                 exit_hostname: ctx.exit_hostname().into(),
                                 alloc_group: bridge_group,
                                 update_time: 0,
