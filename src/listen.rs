@@ -408,7 +408,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     (*MY_PUBLIC_IP).into(),
                                     listen_addr.port(),
                                 ),
-                                sosistab_key: secret.to_public().as_bytes().to_vec().into(),
+                                cookie: secret.to_public().as_bytes().to_vec().into(),
                                 exit_hostname: ctx
                                     .config
                                     .official()
@@ -436,7 +436,7 @@ pub async fn main_loop(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                                     (*MY_PUBLIC_IP).into(),
                                     listen_addr.port(),
                                 ),
-                                sosistab_key: tls_cookie.clone(),
+                                cookie: tls_cookie.clone(),
                                 exit_hostname: ctx.exit_hostname().into(),
                                 alloc_group: "direct".into(),
                                 update_time: SystemTime::now()
