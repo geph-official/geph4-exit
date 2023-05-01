@@ -249,9 +249,19 @@ impl RootCtx {
                     1024,
                 )
             })
-        } else {
+        } else if self
+            .config
+            .official()
+            .as_ref()
+            .and_then(|s| *s.free_limit())
+            .unwrap_or_default()
+            > 0
+        {
+            // plus on free
             self.mass_ratelimits
                 .get_with(key.rotate_left(3), || RateLimiter::new(1903, 5_000_000))
+        } else {
+            RateLimiter::unlimited()
         }
     }
 }
