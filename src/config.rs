@@ -1,7 +1,23 @@
 use cidr_utils::cidr::Ipv6Cidr;
 use getset::{CopyGetters, Getters};
+use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 use std::{collections::BTreeMap, net::SocketAddr, path::PathBuf};
+use structopt::StructOpt;
+
+#[derive(Debug, StructOpt, Clone)]
+struct Opt {
+    #[structopt(long)]
+    /// Path to configuration file.
+    config: PathBuf,
+}
+
+static OPT: Lazy<Opt> = Lazy::new(Opt::from_args);
+
+pub static CONFIG: Lazy<Config> = Lazy::new(|| {
+    toml::from_slice(&std::fs::read(&OPT.config).expect("cannot read configuration file"))
+        .expect("cannot parse configuration file")
+});
 
 /// TOML-serializable configuration file for geph4-exit
 #[derive(CopyGetters, Getters, Serialize, Deserialize, Clone, Debug)]

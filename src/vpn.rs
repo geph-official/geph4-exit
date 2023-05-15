@@ -27,15 +27,16 @@ use std::{
 use tun::{platform::Device, Device as Device2};
 
 use crate::{
+    config::CONFIG,
     connect::proxy_loop,
-    listen::RootCtx,
+    listen::ROOT_CTX,
     ratelimit::RateLimiter,
     smartchan::{smart_channel, SmartReceiver, SmartSender},
 };
 
 /// Runs the transparent proxy helper
-pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
-    if ctx.config.nat_external_iface().is_none() {
+pub async fn transparent_proxy_helper() -> anyhow::Result<()> {
+    if CONFIG.nat_external_iface().is_none() {
         return Ok(());
     }
     // always run on port 10000
@@ -45,7 +46,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
 
     loop {
         let (client, _) = listener.accept().await.unwrap();
-        let ctx = ctx.clone();
+
         let rate_limit = Arc::new(RateLimiter::unlimited());
         let conn_task = smolscale::spawn(
             async move {
@@ -78,7 +79,7 @@ pub async fn transparent_proxy_helper(ctx: Arc<RootCtx>) -> anyhow::Result<()> {
                     .get_ref()
                     .set_nodelay(true)
                     .context("cannot set nodelay")?;
-                proxy_loop(ctx, rate_limit, client, client_id, addr.to_string(), false).await
+                proxy_loop(rate_limit, client, client_id, addr.to_string(), false).await
             }
             .map_err(|e| log::debug!("vpn conn closed: {:?}", e)),
         );
@@ -94,8 +95,8 @@ pub fn vpn_subscribe_down(addr: Ipv4Addr) -> SmartReceiver<Bytes> {
 }
 
 /// Writes a raw, upacket
-pub async fn vpn_send_up(ctx: &RootCtx, assigned_ip: Ipv4Addr, bts: &[u8]) {
-    ctx.incr_throughput(bts.len());
+pub async fn vpn_send_up(assigned_ip: Ipv4Addr, bts: &[u8]) {
+    ROOT_CTX.incr_throughput(bts.len());
     let pkt = Ipv4Packet::new(bts);
     if let Some(pkt) = pkt {
         // source must be correct and destination must not be banned
@@ -127,7 +128,7 @@ pub async fn vpn_send_up(ctx: &RootCtx, assigned_ip: Ipv4Addr, bts: &[u8]) {
             if crate::lists::BLACK_PORTS.contains(&port) {
                 return;
             }
-            if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&port) {
+            if CONFIG.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&port) {
                 return;
             }
         }

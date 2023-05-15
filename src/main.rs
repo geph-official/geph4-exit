@@ -1,13 +1,16 @@
-use std::{io::Read, net::SocketAddr, sync::Arc};
+use std::{net::SocketAddr, ops::Deref};
 
-use anyhow::Context;
-use config::Config;
+
+
 use env_logger::Env;
 
 use smol::process::Command;
 use structopt::StructOpt;
 
-use crate::listen::{main_loop, RootCtx};
+use crate::{
+    config::CONFIG,
+    listen::{main_loop},
+};
 
 mod amnesiac_counter;
 mod asn;
@@ -37,36 +40,23 @@ fn main() -> anyhow::Result<()> {
         smolscale::permanently_single_threaded();
     }
     env_logger::Builder::from_env(Env::default().default_filter_or("geph4_exit=debug,warn")).init();
-    let opt = Opt::from_args();
-    let config: Config = {
-        if opt.config.starts_with("http") {
-            let resp = ureq::get(&opt.config).call();
-            let mut buf = Vec::new();
-            resp.into_reader()
-                .read_to_end(&mut buf)
-                .context("cannot download configuration file")?;
-            toml::from_slice(&buf).context("cannot parse downloaded configuration file")?
-        } else {
-            toml::from_slice(&std::fs::read(&opt.config).context("cannot read configuration file")?)
-                .context("cannot parse configuration file")?
-        }
-    };
+
     log::info!(
         "read configuration file:\n{}",
-        serde_json::to_string_pretty(&config)?
+        serde_json::to_string_pretty(&CONFIG.deref())?
     );
 
-    if let Some(nat_interface) = config.nat_external_iface().as_ref() {
+    if let Some(nat_interface) = CONFIG.nat_external_iface().as_ref() {
         config_iptables(
             nat_interface,
-            *config.force_dns(),
-            !config.disable_tcp_termination(),
+            *CONFIG.force_dns(),
+            !CONFIG.disable_tcp_termination(),
         )?;
     }
-    let ctx: RootCtx = config.into();
+
     smolscale::block_on(async move {
-        if let Some(range) = ctx.config.random_ipv6_range() {
-            if let Some(iface) = ctx.config.ipv6_interface() {
+        if let Some(range) = CONFIG.random_ipv6_range() {
+            if let Some(iface) = CONFIG.ipv6_interface() {
                 Command::new("ip")
                     .arg("-6")
                     .arg("route")
@@ -90,7 +80,7 @@ fn main() -> anyhow::Result<()> {
             }
         }
 
-        main_loop(Arc::new(ctx)).await
+        main_loop().await
     })
 }
 

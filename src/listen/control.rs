@@ -1,6 +1,6 @@
-use crate::{asn::MY_PUBLIC_IP, stats::StatsPipe};
+use crate::{asn::MY_PUBLIC_IP, listen::ROOT_CTX, stats::StatsPipe};
 
-use super::{session_v2::handle_pipe_v2, RootCtx};
+use super::{session_v2::handle_pipe_v2};
 
 use async_trait::async_trait;
 use bytes::Bytes;
@@ -28,8 +28,6 @@ use std::{
 /// The control protocol service.
 #[allow(clippy::type_complexity)]
 pub struct ControlService {
-    ctx: Arc<RootCtx>,
-
     /// Cache of udp stuff
     v2_obfsudp_listeners: Cache<SocketAddr, (SocketAddr, Arc<smol::Task<Infallible>>)>,
     /// Cache of tls stuff
@@ -37,10 +35,8 @@ pub struct ControlService {
 }
 
 impl ControlService {
-    pub fn new(ctx: Arc<RootCtx>) -> Self {
+    pub fn new() -> Self {
         Self {
-            ctx,
-
             v2_obfstls_listeners: Cache::builder()
                 .time_to_idle(Duration::from_secs(120))
                 .build(),
@@ -61,16 +57,15 @@ pub fn dummy_tls_config() -> TlsAcceptor {
 }
 
 async fn forward_and_upload(
-    ctx: Arc<RootCtx>,
     listener: impl PipeListener + Send + Sync + 'static,
     bd_template: BridgeDescriptor,
 ) -> Infallible {
-    ctx.control_count.fetch_add(1, Ordering::Relaxed);
+    ROOT_CTX.control_count.fetch_add(1, Ordering::Relaxed);
     scopeguard::defer!({
-        ctx.control_count.fetch_sub(1, Ordering::Relaxed);
+        ROOT_CTX.control_count.fetch_sub(1, Ordering::Relaxed);
     });
     let bridge_pkt_key = {
-        let exit_hostname = ctx.exit_hostname_dashed();
+        let exit_hostname = ROOT_CTX.exit_hostname_dashed();
         move |bridge_group: &str| {
             format!(
                 "raw_flow.{}.{}",
@@ -81,31 +76,27 @@ async fn forward_and_upload(
     };
     let flow_key = bridge_pkt_key(&bd_template.alloc_group);
     let _forwarder = {
-        let ctx = ctx.clone();
         smolscale::spawn(async move {
             loop {
                 let pipe = listener
                     .accept_pipe()
                     .await
                     .expect("oh no how did this happen");
-                if let Some(stat_client) = ctx.stat_client.as_ref() {
-                    handle_pipe_v2(
-                        ctx.clone(),
-                        StatsPipe::new(pipe, stat_client.clone(), flow_key.clone()),
-                    );
+                if let Some(stat_client) = ROOT_CTX.stat_client.as_ref() {
+                    handle_pipe_v2(StatsPipe::new(pipe, stat_client.clone(), flow_key.clone()));
                 } else {
-                    handle_pipe_v2(ctx.clone(), pipe);
+                    handle_pipe_v2(pipe);
                 }
             }
         })
     };
-    binder_upload_loop(ctx.clone(), bd_template).await
+    binder_upload_loop(bd_template).await
 }
 
 #[async_trait]
 impl BridgeExitProtocol for ControlService {
     async fn load_factor(&self) -> f64 {
-        self.ctx.load_factor.load(Ordering::Relaxed)
+        ROOT_CTX.load_factor.load(Ordering::Relaxed)
     }
     async fn advertise_raw_v2(
         &self,
@@ -121,7 +112,7 @@ impl BridgeExitProtocol for ControlService {
                 };
                 let cookie = *blake3::hash(
                     &(
-                        self.ctx.signing_sk.secret.to_bytes(),
+                        ROOT_CTX.signing_sk.secret.to_bytes(),
                         bridge_addr,
                         protocol,
                         "tls-cookie-hash-gen-lala",
@@ -148,20 +139,19 @@ impl BridgeExitProtocol for ControlService {
                     }
                 };
                 let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), addr.port());
-                let ctx = self.ctx.clone();
+
                 self.v2_obfstls_listeners.insert(
                     bridge_addr,
                     (
                         my_addr,
                         smolscale::spawn(forward_and_upload(
-                            ctx.clone(),
                             listener,
                             BridgeDescriptor {
                                 is_direct: false,
                                 protocol: "sosistab2-obfstls".into(),
                                 endpoint: bridge_addr,
                                 cookie: Bytes::copy_from_slice(&cookie),
-                                exit_hostname: ctx.exit_hostname().into(),
+                                exit_hostname: ROOT_CTX.exit_hostname().into(),
                                 alloc_group: bridge_group,
                                 update_time: 0,
                                 exit_signature: Bytes::new(),
@@ -181,7 +171,7 @@ impl BridgeExitProtocol for ControlService {
                 let secret_key = {
                     let mut hash = *blake3::hash(
                         &(
-                            self.ctx.signing_sk.secret.to_bytes(),
+                            ROOT_CTX.signing_sk.secret.to_bytes(),
                             bridge_addr,
                             protocol,
                             "x25519-hash-gen-lala-ohno",
@@ -210,20 +200,19 @@ impl BridgeExitProtocol for ControlService {
                     }
                 };
                 let my_addr = SocketAddr::new((*MY_PUBLIC_IP).into(), addr.port());
-                let ctx = self.ctx.clone();
+
                 self.v2_obfsudp_listeners.insert(
                     bridge_addr,
                     (
                         my_addr,
                         smolscale::spawn(forward_and_upload(
-                            ctx.clone(),
                             listener,
                             BridgeDescriptor {
                                 is_direct: false,
                                 protocol: "sosistab2-obfsudp".into(),
                                 endpoint: bridge_addr,
                                 cookie: secret_key.to_public().as_bytes().to_vec().into(),
-                                exit_hostname: ctx.exit_hostname().into(),
+                                exit_hostname: ROOT_CTX.exit_hostname().into(),
                                 alloc_group: bridge_group,
                                 update_time: 0,
                                 exit_signature: Bytes::new(),
@@ -253,7 +242,7 @@ impl BridgeExitProtocol for ControlService {
     }
 }
 
-async fn binder_upload_loop(ctx: Arc<RootCtx>, bd_template: BridgeDescriptor) -> Infallible {
+async fn binder_upload_loop(bd_template: BridgeDescriptor) -> Infallible {
     // main loop that just uploads stuff to the binder indefinitely
     loop {
         let route_unixtime = SystemTime::now()
@@ -263,7 +252,7 @@ async fn binder_upload_loop(ctx: Arc<RootCtx>, bd_template: BridgeDescriptor) ->
         let bridge_descriptor = {
             let mut unsigned = bd_template.clone();
             unsigned.update_time = route_unixtime;
-            let signature = ctx
+            let signature = ROOT_CTX
                 .signing_sk
                 .sign(&bincode::serialize(&unsigned).unwrap())
                 .to_bytes()
@@ -273,7 +262,7 @@ async fn binder_upload_loop(ctx: Arc<RootCtx>, bd_template: BridgeDescriptor) ->
             unsigned
         };
 
-        while let Err(err) = ctx
+        while let Err(err) = ROOT_CTX
             .binder_client
             .as_ref()
             .unwrap()

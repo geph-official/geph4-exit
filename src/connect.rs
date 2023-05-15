@@ -2,11 +2,14 @@ mod sni_decode;
 
 use std::{
     net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6},
-    sync::{Arc},
+    sync::Arc,
     time::Duration,
 };
 
-use crate::{connect::sni_decode::decode_sni_from_start, listen::RootCtx, ratelimit::RateLimiter};
+use crate::{
+    config::CONFIG, connect::sni_decode::decode_sni_from_start, listen::ROOT_CTX,
+    ratelimit::RateLimiter,
+};
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
 
@@ -54,7 +57,6 @@ async fn resolve_name(name: String) -> anyhow::Result<SocketAddr> {
 
 /// Connects to a remote host and forwards traffic to/from it and a given client.
 pub async fn proxy_loop(
-    ctx: Arc<RootCtx>,
     rate_limit: Arc<RateLimiter>,
     mut client: impl AsyncRead + AsyncWrite + Clone + Unpin + Send + 'static,
     client_id: u64,
@@ -63,10 +65,12 @@ pub async fn proxy_loop(
 ) -> anyhow::Result<()> {
     let f = async move {
         // Incr/decr the connection count
-        ctx.conn_count
+        ROOT_CTX
+            .conn_count
             .fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let _deferred = scopeguard::guard((), |_| {
-            ctx.conn_count
+            ROOT_CTX
+                .conn_count
                 .fetch_sub(1, std::sync::atomic::Ordering::Relaxed);
         });
 
@@ -79,7 +83,7 @@ pub async fn proxy_loop(
         if crate::lists::BLACK_PORTS.contains(&addr.port()) {
             anyhow::bail!("port blacklisted")
         }
-        if ctx.config.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&addr.port()) {
+        if CONFIG.port_whitelist() && !crate::lists::WHITE_PORTS.contains(&addr.port()) {
             anyhow::bail!("port {} not whitelisted", addr.port())
         }
 
@@ -87,20 +91,19 @@ pub async fn proxy_loop(
         let asn = crate::asn::get_asn(addr.ip());
         log::trace!(
             "got connection request to {} of AS{} (conn_count = {})",
-            ctx.config.redact(addr),
-            ctx.config.redact(asn),
-            ctx.conn_count.load(std::sync::atomic::Ordering::Relaxed)
+            CONFIG.redact(addr),
+            CONFIG.redact(asn),
+            ROOT_CTX
+                .conn_count
+                .load(std::sync::atomic::Ordering::Relaxed)
         );
 
         // Upload official stats
-        let upload_stat = Arc::new({
-            let ctx = ctx.clone();
-            move |n| ctx.incr_throughput(n)
-        });
+        let upload_stat = Arc::new(move |n| ROOT_CTX.incr_throughput(n));
 
         // Read the initial burst
         let mut initial_burst = vec![0u8; 16384];
-        let initial_burst = if ctx.config.random_ipv6_range().is_some() {
+        let initial_burst = if CONFIG.random_ipv6_range().is_some() {
             if let Some(Ok(n)) = client
                 .read(&mut initial_burst)
                 .timeout(Duration::from_millis(1000))
@@ -139,7 +142,7 @@ pub async fn proxy_loop(
         };
 
         let mut remote = if let Some(pool) =
-            ctx.config
+            CONFIG
                 .random_ipv6_range()
                 .and_then(|a| if addr.is_ipv6() { Some(a) } else { None })
         {
@@ -196,7 +199,7 @@ pub async fn proxy_loop(
         .or(async {
             // "grace period"
             smol::Timer::after(Duration::from_secs(30)).await;
-            let killer = ctx.kill_event.listen();
+            let killer = ROOT_CTX.kill_event.listen();
             killer.await;
             log::warn!("killing connection due to connection kill event");
             Ok(())
@@ -210,7 +213,7 @@ pub async fn proxy_loop(
         //     .or(async {
         //         // "grace period"
         //         smol::Timer::after(Duration::from_secs(30)).await;
-        //         let killer = ctx.kill_event.listen();
+        //         let killer = ROOT_CTX.kill_event.listen();
         //         killer.await;
         //         log::warn!("killing connection due to connection kill event");
         //         Ok(())

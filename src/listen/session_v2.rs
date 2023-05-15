@@ -35,28 +35,32 @@ use std::{
 };
 
 use crate::{
+    config::CONFIG,
     connect::proxy_loop,
     ratelimit::RateLimiter,
     vpn::{vpn_send_up, vpn_subscribe_down, IpAddrAssigner},
 };
 
-use super::RootCtx;
+use super::ROOT_CTX;
 
 type TableEntry = (Weak<sosistab2::Multiplex>, Arc<Task<anyhow::Result<()>>>);
 
 /// Handles a sosistab2 pipe, redirecting it to the appropriate multiplex.
-pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
+pub fn handle_pipe_v2(pipe: impl sosistab2::Pipe) {
     static BIG_MULTIPLEX_TABLE: Lazy<DashMap<blake3::Hash, TableEntry>> =
         Lazy::new(Default::default);
     let key = blake3::hash(pipe.peer_metadata().as_bytes());
 
     let mplex = BIG_MULTIPLEX_TABLE.entry(key).or_insert_with(move || {
         // TODO actually put this SK somewhere
-        let mplex = Arc::new(sosistab2::Multiplex::new(ctx.sosistab2_sk.clone(), None));
+        let mplex = Arc::new(sosistab2::Multiplex::new(
+            ROOT_CTX.sosistab2_sk.clone(),
+            None,
+        ));
         mplex.add_drop_friend(scopeguard::guard((), move |_| {
             BIG_MULTIPLEX_TABLE.remove(&key);
         }));
-        let task = smolscale::spawn(handle_session_v2(ctx, mplex.clone()));
+        let task = smolscale::spawn(handle_session_v2(mplex.clone()));
         (Arc::downgrade(&mplex), task.into())
     });
     if let Some(mplex) = mplex.value().0.upgrade() {
@@ -65,17 +69,13 @@ pub fn handle_pipe_v2(ctx: Arc<RootCtx>, pipe: impl sosistab2::Pipe) {
 }
 
 /// Handles a sosistab2 multiplex. We do not try to timeout etc here. The Big Multiplex Table handles this.
-async fn handle_session_v2(
-    ctx: Arc<RootCtx>,
-    mux: Arc<sosistab2::Multiplex>,
-) -> anyhow::Result<()> {
-    let vpn_ipv4 = if ctx.config.nat_external_iface().is_some() {
+async fn handle_session_v2(mux: Arc<sosistab2::Multiplex>) -> anyhow::Result<()> {
+    let vpn_ipv4 = if CONFIG.nat_external_iface().is_some() {
         Some(IpAddrAssigner::global().assign())
     } else {
         None
     };
     let client_exit = Arc::new(ClientExitService(ClientExitImpl::new(
-        ctx.clone(),
         vpn_ipv4.map(|v| v.addr()),
     )));
     let exec = Executor::new();
@@ -87,14 +87,9 @@ async fn handle_session_v2(
                 .timeout(Duration::from_secs(3600))
                 .await
                 .context("timeout")??;
-            ctx.session_keepalive(id);
-            let to_spawn = handle_conn(
-                ctx.clone(),
-                client_exit.clone(),
-                conn,
-                rand::thread_rng().gen(),
-            )
-            .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
+            ROOT_CTX.session_keepalive(id);
+            let to_spawn = handle_conn(client_exit.clone(), conn, rand::thread_rng().gen())
+                .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
             log::trace!("spawning future of {} bytes", size_of_val(&to_spawn));
             exec.spawn(to_spawn).detach();
         }
@@ -103,7 +98,6 @@ async fn handle_session_v2(
 }
 
 async fn handle_conn(
-    ctx: Arc<RootCtx>,
     client_exit: Arc<ClientExitService<ClientExitImpl>>,
     mut stream: MuxStream,
     sess_random: u64,
@@ -113,10 +107,10 @@ async fn handle_conn(
     if hostname == CLIENT_EXIT_PSEUDOHOST {
         // also run the VPN!
         let vpn_stream = stream.clone();
-        let start_vpn = ctx.config.nat_external_iface().is_some();
+        let start_vpn = CONFIG.nat_external_iface().is_some();
         let _vpn_task = {
             let client_exit = client_exit.clone();
-            let ctx = ctx.clone();
+
             smolscale::spawn::<anyhow::Result<()>>(async move {
                 vpn_stream.recv_urel().await?;
                 if start_vpn {
@@ -132,11 +126,11 @@ async fn handle_conn(
                         loop {
                             buff.clear();
                             let next = downstream.recv().await?;
-                            ctx.incr_throughput(next.len());
+                            ROOT_CTX.incr_throughput(next.len());
                             limiter.wait(next.len()).await;
                             buff.push(next);
                             while let Ok(next) = downstream.try_recv() {
-                                ctx.incr_throughput(next.len());
+                                ROOT_CTX.incr_throughput(next.len());
                                 buff.push(next.clone());
 
                                 let mut break_now = false;
@@ -162,10 +156,10 @@ async fn handle_conn(
                     let recv_loop = async {
                         loop {
                             let next = vpn_stream.recv_urel().await?;
-                            ctx.incr_throughput(next.len());
+                            ROOT_CTX.incr_throughput(next.len());
                             let next: Vec<Bytes> = stdcode::deserialize(&next)?;
                             for next in next {
-                                vpn_send_up(&ctx, vpn_ipv4, &next).await;
+                                vpn_send_up(vpn_ipv4, &next).await;
                             }
                         }
                     };
@@ -189,7 +183,7 @@ async fn handle_conn(
         return Ok(());
     }
     // check auth
-    if client_exit.0.authed().is_none() && ctx.config.official().is_some() {
+    if client_exit.0.authed().is_none() && CONFIG.official().is_some() {
         anyhow::bail!("not authed yet, cannot do anything")
     }
 
@@ -199,7 +193,6 @@ async fn handle_conn(
         .limiter()
         .unwrap_or_else(RateLimiter::unlimited);
     proxy_loop(
-        ctx,
         limiter.into(),
         stream.clone(),
         sess_random,
@@ -213,7 +206,6 @@ async fn handle_conn(
 
 /// Encapsulates the client-exit protocol state.
 struct ClientExitImpl {
-    ctx: Arc<RootCtx>,
     is_plus: AtomicBool,
     authed: AtomicU64,
     vpn_ipv4: Option<Ipv4Addr>,
@@ -221,9 +213,8 @@ struct ClientExitImpl {
 
 impl ClientExitImpl {
     /// Creates a new ClientExitImpl.
-    pub fn new(ctx: Arc<RootCtx>, vpn_ipv4: Option<Ipv4Addr>) -> Self {
+    pub fn new(vpn_ipv4: Option<Ipv4Addr>) -> Self {
         Self {
-            ctx,
             is_plus: AtomicBool::new(false),
             authed: AtomicU64::new(0), // FIX LATER
             vpn_ipv4,
@@ -233,9 +224,9 @@ impl ClientExitImpl {
     /// Gets the ratelimit
     pub fn limiter(&self) -> Option<RateLimiter> {
         Some(if self.is_plus() {
-            self.ctx.get_ratelimit(self.authed()?, false)
+            ROOT_CTX.get_ratelimit(self.authed()?, false)
         } else {
-            self.ctx.get_ratelimit(self.authed()?, true)
+            ROOT_CTX.get_ratelimit(self.authed()?, true)
         })
     }
 
@@ -260,7 +251,7 @@ impl ClientExitProtocol for ClientExitImpl {
     async fn validate(&self, token: BlindToken) -> bool {
         // fail-open
         let fallible = async {
-            if let Some(client) = self.ctx.binder_client.as_ref() {
+            if let Some(client) = ROOT_CTX.binder_client.as_ref() {
                 anyhow::Ok(client.validate(token.clone()).await?)
             } else {
                 anyhow::Ok(true)
