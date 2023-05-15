@@ -264,7 +264,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
 
         if let Some(client) = ROOT_CTX.stat_client.as_ref() {
             let stat_key = format!("gross_exit_usage.{}", ROOT_CTX.exit_hostname_dashed());
-            client.count(&stat_key, 1_000_000.0);
+            client.count(&stat_key, bw_delta as f64);
         }
 
         last_bw_used = bw_used;
