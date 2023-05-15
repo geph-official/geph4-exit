@@ -1,16 +1,11 @@
 use std::{net::SocketAddr, ops::Deref};
 
-
-
 use env_logger::Env;
 
 use smol::process::Command;
 use structopt::StructOpt;
 
-use crate::{
-    config::CONFIG,
-    listen::{main_loop},
-};
+use crate::{config::CONFIG, listen::main_loop};
 
 mod amnesiac_counter;
 mod asn;
@@ -25,13 +20,6 @@ mod vpn;
 
 #[global_allocator]
 static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
-
-#[derive(Debug, StructOpt, Clone)]
-struct Opt {
-    #[structopt(long)]
-    /// Path to configuration file. Can be a HTTP URL!
-    config: String,
-}
 
 fn main() -> anyhow::Result<()> {
     std::env::set_var("SOSISTAB_NO_OOB", "1");
