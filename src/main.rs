@@ -3,7 +3,6 @@ use std::{net::SocketAddr, ops::Deref};
 use env_logger::Env;
 
 use smol::process::Command;
-use structopt::StructOpt;
 
 use crate::{config::CONFIG, listen::main_loop};
 
@@ -14,6 +13,7 @@ mod connect;
 mod listen;
 mod lists;
 mod ratelimit;
+mod root_ctx;
 mod smartchan;
 mod stats;
 mod vpn;

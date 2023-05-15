@@ -29,8 +29,8 @@ use tun::{platform::Device, Device as Device2};
 use crate::{
     config::CONFIG,
     connect::proxy_loop,
-    listen::ROOT_CTX,
     ratelimit::RateLimiter,
+    root_ctx::ROOT_CTX,
     smartchan::{smart_channel, SmartReceiver, SmartSender},
 };
 

@@ -7,8 +7,8 @@ use std::{
 };
 
 use crate::{
-    config::CONFIG, connect::sni_decode::decode_sni_from_start, listen::ROOT_CTX,
-    ratelimit::RateLimiter,
+    config::CONFIG, connect::sni_decode::decode_sni_from_start, ratelimit::RateLimiter,
+    root_ctx::ROOT_CTX,
 };
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
