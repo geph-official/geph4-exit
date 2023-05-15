@@ -251,6 +251,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
     let mut timer = smol::Timer::interval(Duration::from_secs(1));
     let mut last_bw_used = 0u128;
     loop {
+        let first_time = last_bw_used == 0;
         timer.next().await;
         sys.refresh_all();
         let cpus = sys.cpus();
@@ -263,8 +264,10 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
         let bw_delta = bw_used.saturating_sub(last_bw_used);
 
         if let Some(client) = ROOT_CTX.stat_client.as_ref() {
-            let stat_key = format!("gross_exit_usage.{}", ROOT_CTX.exit_hostname_dashed());
-            client.count(&stat_key, bw_delta as f64);
+            if !first_time {
+                let stat_key = format!("gross_exit_usage.{}", ROOT_CTX.exit_hostname_dashed());
+                client.count(&stat_key, bw_delta as f64);
+            }
         }
 
         last_bw_used = bw_used;
