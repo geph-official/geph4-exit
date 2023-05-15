@@ -15,7 +15,7 @@ mod lists;
 mod ratelimit;
 mod root_ctx;
 mod smartchan;
-mod stats;
+mod stats_pipe;
 mod vpn;
 
 #[global_allocator]
