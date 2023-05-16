@@ -78,6 +78,7 @@ async fn control_protocol() -> anyhow::Result<()> {
                 .bridge_secret()
                 .as_bytes(),
         );
+        log::debug!("bridge secret {:?}", secret);
         let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await.unwrap();
         log::info!("starting bridge exit listener");
         serve_bridge_exit(
