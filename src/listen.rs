@@ -70,14 +70,8 @@ async fn killconn() -> anyhow::Result<()> {
 
 async fn control_protocol() -> anyhow::Result<()> {
     if CONFIG.official().is_some() {
-        let secret = blake3::hash(
-            CONFIG
-                .official()
-                .as_ref()
-                .unwrap()
-                .bridge_secret()
-                .as_bytes(),
-        );
+        let secret =
+            blake3::hash(dbg!(CONFIG.official().as_ref().unwrap().bridge_secret()).as_bytes());
         log::debug!("bridge secret {:?}", secret);
         let socket = smol::net::UdpSocket::bind("0.0.0.0:28080").await.unwrap();
         log::info!("starting bridge exit listener");
