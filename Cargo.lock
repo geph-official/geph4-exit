@@ -1737,9 +1737,9 @@ dependencies = [
 
 [[package]]
 name = "geph4-protocol"
-version = "0.16.7"
+version = "0.16.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f566baa617eb8e7a404f85b3e940dcc1aac0bd4b4a78f93eb56c28c8d7977895"
+checksum = "63417048d1fb088902c4d25e07ea006b9aeaf947f83e54d780d4b9de7416bf29"
 dependencies = [
  "acidjson",
  "anyhow",
