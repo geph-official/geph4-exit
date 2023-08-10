@@ -65,6 +65,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "getrandom 0.2.9",
  "once_cell",
+ "serde",
  "version_check",
 ]
 
@@ -160,6 +161,15 @@ checksum = "7427a12b8dc09291528cfb1da2447059adb4a257388c2acd6497a79d55cf6f7c"
 dependencies = [
  "futures-io",
  "simple-mutex",
+]
+
+[[package]]
+name = "async-event"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4172595da7ffb68640606be5723e35a353555f2829e9209437627a003725bbdb"
+dependencies = [
+ "loom",
 ]
 
 [[package]]
@@ -1183,6 +1193,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "diatomic-waker"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "28025fb55a9d815acf7b0877555f437254f373036eec6ed265116c7a5c0825e9"
+dependencies = [
+ "loom",
+ "waker-fn",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1523,6 +1543,17 @@ dependencies = [
  "futures-core",
  "lock_api",
  "parking_lot 0.11.2",
+]
+
+[[package]]
+name = "futures-intrusive"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1d930c203dd0b6ff06e0201a4a2fe9149b43c684fd4420555b26d21b1a02956f"
+dependencies = [
+ "futures-core",
+ "lock_api",
+ "parking_lot 0.12.1",
 ]
 
 [[package]]
@@ -3603,6 +3634,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "recycle-box"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "05180b1c0f6183a05d92c22a01db6f289074b9d78ff639b0488cb6be3efdc644"
+
+[[package]]
 name = "redox_syscall"
 version = "0.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4262,7 +4299,7 @@ dependencies = [
  "event-listener",
  "fastrand",
  "flume",
- "futures-intrusive",
+ "futures-intrusive 0.4.2",
  "futures-lite",
  "futures-util",
  "log",
@@ -4303,15 +4340,16 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.8.16"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4ddc730a081e63058189b79584f5c20de699774f4e0d723b770fcb988deee8c7"
+checksum = "38eec13e829faa01c072722fb59329fbc08ba5af17a47ad8dbd7a1d43f088bf9"
 dependencies = [
  "ahash 0.8.3",
  "anyhow",
  "arc-swap",
  "arrayref",
  "async-dup",
+ "async-event",
  "async-native-tls",
  "async-trait",
  "blake3",
@@ -4320,8 +4358,10 @@ dependencies = [
  "concurrent-queue 1.2.4",
  "dashmap 5.4.0",
  "derivative",
+ "diatomic-waker",
  "event-listener",
  "fastrand",
+ "futures-intrusive 0.5.0",
  "futures-util",
  "hex",
  "indexmap",
@@ -4332,12 +4372,13 @@ dependencies = [
  "native-tls",
  "num_cpus",
  "once_cell",
- "parking_lot 0.11.2",
+ "parking_lot 0.12.1",
  "pin-project",
  "priority-queue",
  "probability",
  "rand 0.7.3",
  "rand_chacha 0.2.2",
+ "recycle-box",
  "reed-solomon-erasure",
  "replay_filter",
  "ring",
@@ -4353,6 +4394,7 @@ dependencies = [
  "socket2 0.3.19",
  "stdcode",
  "subtle",
+ "tachyonix",
  "thiserror",
  "tracing",
  "x25519-dalek",
@@ -4616,6 +4658,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "36205cfc997faadcc4b0b87aaef3fbedafe20d38d4959a7ca6ff803564051111"
 dependencies = [
  "unicode-width",
+]
+
+[[package]]
+name = "tachyonix"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "64e0bf82be3359dbefbfea621d6365db00e1d7846561daad2ea74cc4cb4c9604"
+dependencies = [
+ "async-event",
+ "crossbeam-utils",
+ "diatomic-waker",
+ "futures-core",
+ "loom",
 ]
 
 [[package]]
