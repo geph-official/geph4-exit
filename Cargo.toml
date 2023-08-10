@@ -76,7 +76,7 @@ sysinfo = "0.26.9"
 
 # mimalloc = { version = "0.1.30", default-features=false}
 stdcode = "0.1.14"
-sosistab2 = "0.9.2"
+sosistab2 = "0.8"
 
 # sosistab2={git="https://github.com/geph-official/sosistab2"}
 
