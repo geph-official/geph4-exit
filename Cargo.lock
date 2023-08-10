@@ -2078,9 +2078,9 @@ dependencies = [
 
 [[package]]
 name = "http-body-util"
-version = "0.1.0-rc.3"
+version = "0.1.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "08ef12f041acdd397010e5fb6433270c147d3b8b2d0a840cd7fff8e531dca5c8"
+checksum = "92445bc9cc14bfa0a3ce56817dc3b5bcc227a168781a356b702410789cec0d10"
 dependencies = [
  "bytes",
  "futures-util",
@@ -2133,12 +2133,13 @@ dependencies = [
 
 [[package]]
 name = "hyper"
-version = "1.0.0-rc.4"
+version = "1.0.0-rc.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d280a71f348bcc670fc55b02b63c53a04ac0bf2daff2980795aeaf53edae10e6"
+checksum = "289cfdbf735dea222b0ec6a10224b4d9552c7662bb451d4589cbfda3d407d1a3"
 dependencies = [
  "bytes",
  "futures-channel",
+ "futures-core",
  "futures-util",
  "http",
  "http-body 1.0.0-rc.2",
@@ -2723,9 +2724,9 @@ dependencies = [
 
 [[package]]
 name = "nanorpc-http"
-version = "0.1.2"
+version = "0.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bc19949162e00e8fece1b52dfc19af82678716bd74be034ffb3f33c221586e8a"
+checksum = "6079fc9126cc8578a34f8533d5c82024af3218021b5cfb8509fe767ba2af3a95"
 dependencies = [
  "anyhow",
  "async-compat",
@@ -2733,7 +2734,7 @@ dependencies = [
  "bytes",
  "concurrent-queue 2.2.0",
  "http-body-util",
- "hyper 1.0.0-rc.4",
+ "hyper 1.0.0-rc.2",
  "nanorpc",
  "serde_json",
  "smol",
