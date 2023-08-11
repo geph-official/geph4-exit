@@ -18,12 +18,12 @@ mod smartchan;
 mod stats_pipe;
 mod vpn;
 
-// #[global_allocator]
-// static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+#[global_allocator]
+static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 fn main() -> anyhow::Result<()> {
     std::env::set_var("SOSISTAB_NO_OOB", "1");
-    std::env::set_var("SOSISTAB_NO_FEC", "1");
+    // std::env::set_var("SOSISTAB_NO_FEC", "1");
     if std::env::var("GEPH_SINGLETHREADED").is_ok() {
         smolscale::permanently_single_threaded();
     }
