@@ -57,18 +57,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "ahash"
-version = "0.8.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2c99f64d1e06488f620f932677e24bc6e2897582980441ae90a671415bd7ec2f"
-dependencies = [
- "cfg-if 1.0.0",
- "getrandom 0.2.10",
- "once_cell",
- "version_check",
-]
-
-[[package]]
 name = "aho-corasick"
 version = "1.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -115,12 +103,6 @@ checksum = "e2d098ff73c1ca148721f37baad5ea6a465a13f9573aba8641fbbbae8164a54e"
 dependencies = [
  "derive_arbitrary",
 ]
-
-[[package]]
-name = "arc-swap"
-version = "1.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bddcadddf5e9015d310179a59bb28c4d4b9920ad0f11e8e14dbadf654890c9a6"
 
 [[package]]
 name = "arrayref"
@@ -245,18 +227,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "479db852db25d9dbf6204e6cb6253698f175c15726470f78af0d918e99d6156e"
 dependencies = [
  "event-listener",
-]
-
-[[package]]
-name = "async-native-tls"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d57d4cec3c647232e1094dc013546c0b33ce785d8aeb251e1f20dfaf8a9a13fe"
-dependencies = [
- "futures-util",
- "native-tls",
- "thiserror",
- "url",
 ]
 
 [[package]]
@@ -502,22 +472,10 @@ version = "0.20.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7774144344a4faa177370406a7ff5f1da24303817368584c6206c8303eb07848"
 dependencies = [
- "funty 1.1.0",
- "radium 0.6.2",
+ "funty",
+ "radium",
  "tap",
- "wyz 0.2.0",
-]
-
-[[package]]
-name = "bitvec"
-version = "1.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1bc2832c24239b0141d5674bb9174f9d68a8b5b3f2753311927c172ca46f7e9c"
-dependencies = [
- "funty 2.0.0",
- "radium 0.7.0",
- "tap",
- "wyz 0.5.1",
+ "wyz",
 ]
 
 [[package]]
@@ -1487,12 +1445,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fed34cd105917e91daa4da6b3728c47b068749d6a62c59811f06ed2ac71d9da7"
 
 [[package]]
-name = "funty"
-version = "2.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e6d5a32815ae3f33302d95fdcb2ce17862f8c65363dcfd29360480ba1001fc9c"
-
-[[package]]
 name = "futures"
 version = "0.3.28"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1743,7 +1695,6 @@ dependencies = [
  "smol_str",
  "smolscale",
  "socket2 0.4.9",
- "sosistab2",
  "statsd",
  "stdcode",
  "structopt",
@@ -2404,15 +2355,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "lru"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b6e8aaa3f231bb4bd57b84b2d5dc3ae7f350265df8aa96492e0bc394a1571909"
-dependencies = [
- "hashbrown 0.12.3",
-]
-
-[[package]]
 name = "lz4_flex"
 version = "0.9.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2499,7 +2441,7 @@ dependencies = [
  "futures-util",
  "hex",
  "log",
- "lru 0.7.8",
+ "lru",
  "melbootstrap",
  "melnet2",
  "melstructs",
@@ -2764,7 +2706,7 @@ checksum = "0ebb8938a493ec608abc6ab8d49155f6a29bf8b6e0af51dd827b2716dc6af0a0"
 dependencies = [
  "arrayref",
  "backtrace 0.3.68",
- "bitvec 0.20.4",
+ "bitvec",
  "blake3",
  "bytes",
  "dashmap 4.0.2",
@@ -2775,7 +2717,7 @@ dependencies = [
  "honggfuzz",
  "itertools",
  "log",
- "lru 0.7.8",
+ "lru",
  "rayon",
  "replace_with",
  "rustc-hash",
@@ -3280,16 +3222,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "probability"
-version = "0.17.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01935a29f0dd293b7d0254144168084cc8ada317b107635c777fb7d0fb5120e5"
-dependencies = [
- "random",
- "special",
-]
-
-[[package]]
 name = "proc-macro-crate"
 version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3436,12 +3368,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "643f8f41a8ebc4c5dc4515c82bb8abd397b527fc20fd681b7c011c2aee5d44fb"
 
 [[package]]
-name = "radium"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dc33ff2d4973d518d823d61aa239014831e521c75da58e3df4840d3f47749d09"
-
-[[package]]
 name = "rand"
 version = "0.3.23"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3560,12 +3486,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "random"
-version = "0.12.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "97d13a3485349981c90c79112a11222c3e6e75de1d52b87a7525b3bf5361420f"
-
-[[package]]
 name = "rangemap"
 version = "0.1.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3642,19 +3562,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "reed-solomon-erasure"
-version = "6.0.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7263373d500d4d4f505d43a2a662d475a894aa94503a1ee28e9188b5f3960d4f"
-dependencies = [
- "libm",
- "lru 0.7.8",
- "parking_lot 0.11.2",
- "smallvec",
- "spin 0.9.8",
-]
-
-[[package]]
 name = "regex"
 version = "1.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3703,17 +3610,6 @@ name = "replace_with"
 version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3a8614ee435691de62bcffcf4a66d91b3594bf1428a5722e79103249a095690"
-
-[[package]]
-name = "replay_filter"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e92f12b45df65374163d6bf4327abd0e8c3d2e198bebfbd5f53c13edaeb900ea"
-dependencies = [
- "bitvec 1.0.1",
- "honggfuzz",
- "log",
-]
 
 [[package]]
 name = "reqwest"
@@ -4234,17 +4130,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "sluice"
-version = "0.5.5"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d7400c0eff44aa2fcb5e31a5f24ba9716ed90138769e4977a2ba6014ae63eb5"
-dependencies = [
- "async-channel",
- "futures-core",
- "futures-io",
-]
-
-[[package]]
 name = "smallvec"
 version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4328,17 +4213,6 @@ dependencies = [
 
 [[package]]
 name = "socket2"
-version = "0.3.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "122e570113d28d773067fab24266b66753f6ea915758651696b6e35e49f88d6e"
-dependencies = [
- "cfg-if 1.0.0",
- "libc",
- "winapi 0.3.9",
-]
-
-[[package]]
-name = "socket2"
 version = "0.4.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64a4a911eed85daf18834cfaa86a79b7d266ff93ff5ba14005426219480ed662"
@@ -4355,72 +4229,6 @@ checksum = "2538b18701741680e0322a2302176d3253a35388e2e62f172f64f4f16605f877"
 dependencies = [
  "libc",
  "windows-sys",
-]
-
-[[package]]
-name = "sosistab2"
-version = "0.8.19"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5bcf5a36f8111aaf8c3763b6a1d1fe2d55f509a821b9d8f4b3625b3b539564ad"
-dependencies = [
- "ahash 0.8.3",
- "anyhow",
- "arc-swap",
- "arrayref",
- "async-dup",
- "async-native-tls",
- "async-trait",
- "blake3",
- "bytes",
- "cached 0.26.2",
- "concurrent-queue 1.2.4",
- "dashmap 5.5.0",
- "derivative",
- "event-listener",
- "fastrand 1.9.0",
- "futures-util",
- "hex",
- "indexmap 1.9.3",
- "itertools",
- "log",
- "lru 0.8.1",
- "moka",
- "native-tls",
- "num_cpus",
- "once_cell",
- "parking_lot 0.11.2",
- "pin-project",
- "priority-queue",
- "probability",
- "rand 0.7.3",
- "rand_chacha 0.2.2",
- "reed-solomon-erasure",
- "replay_filter",
- "ring",
- "scopeguard",
- "serde",
- "slab",
- "sluice",
- "smallvec",
- "smol",
- "smol-timeout",
- "smol_str",
- "smolscale",
- "socket2 0.3.19",
- "stdcode",
- "subtle",
- "thiserror",
- "tracing",
- "x25519-dalek",
-]
-
-[[package]]
-name = "special"
-version = "0.8.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24a65e074159b75dcf173a4733ab2188baac24967b5c8ec9ed87ae15fcbc7636"
-dependencies = [
- "libc",
 ]
 
 [[package]]
@@ -4936,7 +4744,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8ce8c33a8d48bd45d624a6e523445fd21ec13d3653cd51f681abf67418f54eb8"
 dependencies = [
  "cfg-if 1.0.0",
- "log",
  "pin-project-lite 0.2.12",
  "tracing-attributes",
  "tracing-core",
@@ -5443,15 +5250,6 @@ name = "wyz"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "85e60b0d1b5f99db2556934e21937020776a5d31520bf169e851ac44e6420214"
-
-[[package]]
-name = "wyz"
-version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "05f360fc0b24296329c78fda852a1e9ae82de9cf7b27dae4b7f62f118f77b9ed"
-dependencies = [
- "tap",
-]
 
 [[package]]
 name = "x25519-dalek"
