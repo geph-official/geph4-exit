@@ -22,11 +22,11 @@ impl<P: Pipe> StatsPipe<P> {
 
 #[async_trait]
 impl<P: Pipe> Pipe for StatsPipe<P> {
-    fn send(&self, to_send: Bytes) {
+    async fn send(&self, to_send: Bytes) {
         if fastrand::f64() < to_send.len() as f64 / 1_000_000.0 {
             self.statsd_client.count(&self.flow_key, 1_000_000.0);
         }
-        self.inner.send(to_send);
+        self.inner.send(to_send).await;
     }
 
     async fn recv(&self) -> std::io::Result<Bytes> {
