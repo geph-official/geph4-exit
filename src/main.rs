@@ -18,8 +18,8 @@ mod smartchan;
 mod stats_pipe;
 mod vpn;
 
-#[global_allocator]
-static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
+// #[global_allocator]
+// static GLOBAL: jemallocator::Jemalloc = jemallocator::Jemalloc;
 
 fn main() -> anyhow::Result<()> {
     std::env::set_var("SOSISTAB_NO_OOB", "1");
