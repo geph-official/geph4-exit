@@ -1,15 +1,10 @@
-mod sni_decode;
-
 use std::{
-    net::{IpAddr, Ipv6Addr, SocketAddr, SocketAddrV6},
+    net::{Ipv6Addr, SocketAddr, SocketAddrV6},
     sync::Arc,
     time::Duration,
 };
 
-use crate::{
-    config::CONFIG, connect::sni_decode::decode_sni_from_start, ratelimit::RateLimiter,
-    root_ctx::ROOT_CTX,
-};
+use crate::{config::CONFIG, ratelimit::RateLimiter, root_ctx::ROOT_CTX};
 use anyhow::Context;
 use cidr_utils::cidr::Ipv6Cidr;
 
@@ -58,7 +53,7 @@ async fn resolve_name(name: String) -> anyhow::Result<SocketAddr> {
 /// Connects to a remote host and forwards traffic to/from it and a given client.
 pub async fn proxy_loop(
     rate_limit: Arc<RateLimiter>,
-    mut client: impl AsyncRead + AsyncWrite + Clone + Unpin + Send + 'static,
+    client: impl AsyncRead + AsyncWrite + Clone + Unpin + Send + 'static,
     client_id: u64,
     addr: String,
     _count_stats: bool,
@@ -101,47 +96,7 @@ pub async fn proxy_loop(
         // Upload official stats
         let upload_stat = Arc::new(move |n| ROOT_CTX.incr_throughput(n));
 
-        // Read the initial burst
-        let mut initial_burst = vec![0u8; 16384];
-        let initial_burst = if CONFIG.random_ipv6_range().is_some() {
-            if let Some(Ok(n)) = client
-                .read(&mut initial_burst)
-                .timeout(Duration::from_millis(1000))
-                .await
-            {
-                Some(&initial_burst[..n])
-            } else {
-                None
-            }
-        } else {
-            None
-        };
-
-        let addr = if let Some(burst) = initial_burst {
-            if addr.port() != 443 {
-                addr
-            } else {
-                log::trace!("attempt SNI peek on {} bytes", burst.len());
-                match decode_sni_from_start(burst) {
-                    Ok(real_host) => {
-                        if real_host.parse::<IpAddr>().is_ok() {
-                            addr
-                        } else {
-                            log::trace!("re-resolving based on SNI hostname {}", real_host);
-                            resolve_name(format!("{}:{}", real_host, addr.port())).await?
-                        }
-                    }
-                    Err(err) => {
-                        log::trace!("error decoding SNI: {:?}", err);
-                        addr
-                    }
-                }
-            }
-        } else {
-            addr
-        };
-
-        let mut remote = if let Some(pool) =
+        let remote = if let Some(pool) =
             CONFIG
                 .random_ipv6_range()
                 .and_then(|a| if addr.is_ipv6() { Some(a) } else { None })
@@ -168,10 +123,6 @@ pub async fn proxy_loop(
                 .ok_or_else(|| anyhow::anyhow!("connect timed out for {}", addr))??
         };
         remote.as_ref().set_nodelay(true)?;
-
-        if let Some(b) = initial_burst {
-            remote.write_all(b).await?;
-        }
 
         let remote = async_dup::Arc::new(remote);
         let remote2 = remote.clone();

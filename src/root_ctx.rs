@@ -5,13 +5,12 @@ use std::{
 
 use atomic_float::AtomicF64;
 use event_listener::Event;
-use futures_util::StreamExt;
+
 use geph4_protocol::binder::{client::E2eeHttpTransport, protocol::BinderClient};
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
 use smol::fs::unix::PermissionsExt;
 use sosistab2::MuxSecret;
-use sysinfo::SystemExt;
 
 use crate::{amnesiac_counter::AmnesiacCounter, config::CONFIG, ratelimit::RateLimiter};
 
