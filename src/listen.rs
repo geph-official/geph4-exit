@@ -247,7 +247,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
     let mut i = 0.0;
     let target_usage = 0.95f32;
     let mut divider;
-    let seconds = 5.0;
+    let seconds = 2.0;
     let mut timer = smol::Timer::interval(Duration::from_secs_f64(seconds));
     let mut last_bw_used = 0u128;
     loop {
