@@ -247,7 +247,8 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
     let mut i = 0.0;
     let target_usage = 0.95f32;
     let mut divider;
-    let mut timer = smol::Timer::interval(Duration::from_secs(1));
+    let seconds = 5.0;
+    let mut timer = smol::Timer::interval(Duration::from_secs_f64(seconds));
     let mut last_bw_used = 0u128;
     loop {
         let first_time = last_bw_used == 0;
@@ -270,7 +271,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
         }
 
         last_bw_used = bw_used;
-        let bw_usage = (bw_delta as f64 / 1000.0 / all_limit) as f32;
+        let bw_usage = (bw_delta as f64 / 1000.0 / all_limit / seconds) as f32;
         let total_usage = bw_usage.max(cpu_usage);
         let multiplier = if total_usage < target_usage * 0.8 {
             i = 0.0;
