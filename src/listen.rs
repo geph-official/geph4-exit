@@ -274,7 +274,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<()> {
         let bw_usage = (bw_delta as f64 / 1000.0 / all_limit / seconds) as f32;
         let total_usage = bw_usage.max(cpu_usage);
         let multiplier = if total_usage < target_usage * 0.8 {
-            i = 0.0;
+            // i = 0.0;
             BW_MULTIPLIER.swap(1.0, Ordering::Relaxed)
         } else {
             log::info!("CPU PID usage: {:.2}%", cpu_usage * 100.0);
