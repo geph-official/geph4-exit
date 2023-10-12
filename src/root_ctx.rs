@@ -164,7 +164,7 @@ impl RootCtx {
                         .as_ref()
                         .and_then(|s| *s.free_limit())
                         .unwrap_or_default(),
-                    1024,
+                    128_000,
                 )
             })
         } else if CONFIG
