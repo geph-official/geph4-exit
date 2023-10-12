@@ -67,7 +67,7 @@ impl RateLimiter {
                 }
                 NegativeMultiDecision::InsufficientCapacity(_) => {
                     log::error!("INSUFFICIENT CAP");
-                    smol::Timer::after(Duration::from_secs(1)).await;
+                    return;
                 }
             }
         }
