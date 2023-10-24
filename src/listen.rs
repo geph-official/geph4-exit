@@ -17,7 +17,9 @@ use geph4_protocol::{binder::protocol::BridgeDescriptor, bridge_exit::serve_brid
 
 use smol::prelude::*;
 
-use sosistab2::{ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
+use sosistab2::PipeListener;
+use sosistab2_obfstls::ObfsTlsListener;
+use sosistab2_obfsudp::{ObfsUdpListener, ObfsUdpSecret};
 use sysinfo::{CpuExt, System, SystemExt};
 
 use self::{control::ControlService, session_v2::handle_pipe_v2};
@@ -155,7 +157,9 @@ async fn pipe_listen() -> anyhow::Result<()> {
         .parse()
         .expect("cannot parse sosistab2 listening address");
 
-    let udp_listener = ObfsUdpListener::bind(listen_addr, secret.clone()).unwrap();
+    let udp_listener = ObfsUdpListener::bind(listen_addr, secret.clone())
+        .await
+        .unwrap();
     let tls_cookie = Bytes::copy_from_slice(secret.to_public().as_bytes());
     let tls_listener = ObfsTlsListener::bind(listen_addr, dummy_tls_config(), tls_cookie.clone())
         .await

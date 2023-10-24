@@ -4,7 +4,6 @@ use governor::{state::NotKeyed, NegativeMultiDecision, Quota};
 use std::{
     num::NonZeroU32,
     sync::{atomic::Ordering, Arc},
-    time::Duration,
 };
 
 pub static BW_MULTIPLIER: AtomicF64 = AtomicF64::new(1.0);

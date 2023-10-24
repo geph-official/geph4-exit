@@ -15,7 +15,9 @@ use native_tls::TlsAcceptor;
 use rand::prelude::*;
 
 use smol_str::SmolStr;
-use sosistab2::{ObfsTlsListener, ObfsUdpListener, ObfsUdpSecret, PipeListener};
+use sosistab2::PipeListener;
+use sosistab2_obfstls::ObfsTlsListener;
+use sosistab2_obfsudp::{ObfsUdpListener, ObfsUdpSecret};
 use stdcode::StdcodeSerializeExt;
 
 use std::{
@@ -174,7 +176,7 @@ impl BridgeExitProtocol for ControlService {
                             ROOT_CTX.signing_sk.secret.to_bytes(),
                             bridge_addr,
                             protocol,
-                            "x25519-hash-gen-lala-ohno",
+                            "x25519-hash-gen-lala-ohno-v2",
                         )
                             .stdcode(),
                     )
@@ -192,7 +194,7 @@ impl BridgeExitProtocol for ControlService {
                         .parse()
                         .unwrap();
 
-                    match ObfsUdpListener::bind(addr, secret_key.clone()) {
+                    match ObfsUdpListener::bind(addr, secret_key.clone()).await {
                         Ok(listener) => break (addr, listener, secret_key.to_public()),
                         Err(_err) => {
                             log::warn!("cannot bind to {}", addr);
