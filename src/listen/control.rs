@@ -122,11 +122,12 @@ impl BridgeExitProtocol for ControlService {
                         .stdcode(),
                 )
                 .as_bytes();
-                let mut rng = rand::rngs::StdRng::from_seed(cookie);
+
                 let (addr, listener) = loop {
-                    let addr: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
-                        .parse()
-                        .unwrap();
+                    let addr: SocketAddr =
+                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
+                            .parse()
+                            .unwrap();
                     match ObfsTlsListener::bind(
                         addr,
                         dummy_tls_config(),
@@ -187,12 +188,13 @@ impl BridgeExitProtocol for ControlService {
                     hash[31] |= 64;
                     ObfsUdpSecret::from_bytes(hash)
                 };
-                let mut rng = rand::rngs::StdRng::from_seed(secret_key.to_bytes());
+
                 // create a listener
                 let (addr, listener, _) = loop {
-                    let addr: SocketAddr = format!("[::0]:{}", rng.gen_range(1000, 60000))
-                        .parse()
-                        .unwrap();
+                    let addr: SocketAddr =
+                        format!("[::0]:{}", rand::thread_rng().gen_range(1000, 60000))
+                            .parse()
+                            .unwrap();
 
                     match ObfsUdpListener::bind(addr, secret_key.clone()).await {
                         Ok(listener) => break (addr, listener, secret_key.to_public()),
