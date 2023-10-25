@@ -4553,7 +4553,7 @@ dependencies = [
 [[package]]
 name = "sosistab2-obfsudp"
 version = "0.1.0"
-source = "git+https://github.com/geph-official/sosistab2-obfsudp#c7815c47fc4805847b42dc75bbf8320d042df98a"
+source = "git+https://github.com/geph-official/sosistab2-obfsudp#855287f1dc5112b230b625f02de5580eccd63e94"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
