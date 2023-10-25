@@ -599,9 +599,9 @@ checksum = "7f30e7476521f6f8af1a1c4c0b8cc94f0bee37d91763d0ca2665f299b6cd8aec"
 
 [[package]]
 name = "bytecount"
-version = "0.6.5"
+version = "0.6.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d1a12477b7237a01c11a80a51278165f9ba0edd28fa6db00a65ab230320dc58c"
+checksum = "e1e5f035d16fc623ae5f74981db80a439803888314e3a555fd6f04acd51a3205"
 
 [[package]]
 name = "byteorder"
@@ -1743,7 +1743,7 @@ dependencies = [
  "libc",
  "log",
  "mizaru",
- "moka",
+ "moka 0.9.9",
  "nanorpc",
  "native-tls",
  "nix",
@@ -2509,7 +2509,7 @@ dependencies = [
  "itertools 0.10.5",
  "log",
  "lz4_flex",
- "moka",
+ "moka 0.9.9",
  "nanorpc",
  "nanorpc-http",
  "pin-project",
@@ -2686,6 +2686,27 @@ dependencies = [
  "quanta 0.11.1",
  "rustc_version 0.4.0",
  "scheduled-thread-pool",
+ "skeptic",
+ "smallvec",
+ "tagptr",
+ "thiserror",
+ "triomphe",
+ "uuid",
+]
+
+[[package]]
+name = "moka"
+version = "0.12.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d8017ec3548ffe7d4cef7ac0e12b044c01164a74c0f3119420faeaf13490ad8b"
+dependencies = [
+ "crossbeam-channel",
+ "crossbeam-epoch",
+ "crossbeam-utils",
+ "once_cell",
+ "parking_lot 0.12.1",
+ "quanta 0.11.1",
+ "rustc_version 0.4.0",
  "skeptic",
  "smallvec",
  "tagptr",
@@ -4532,7 +4553,7 @@ dependencies = [
 [[package]]
 name = "sosistab2-obfsudp"
 version = "0.1.0"
-source = "git+https://github.com/geph-official/sosistab2-obfsudp#d22cad0e87939f04ba0502ab3c0a39aaa7449aa7"
+source = "git+https://github.com/geph-official/sosistab2-obfsudp#021371a13c6a62733a489cf463b3420aa87d58dd"
 dependencies = [
  "ahash 0.8.5",
  "anyhow",
@@ -4545,6 +4566,7 @@ dependencies = [
  "itertools 0.11.0",
  "log",
  "lru 0.12.0",
+ "moka 0.12.1",
  "once_cell",
  "parking_lot 0.12.1",
  "priority-queue",
@@ -5644,18 +5666,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.7.11"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c19fae0c8a9efc6a8281f2e623db8af1db9e57852e04cde3e754dd2dc29340f"
+checksum = "69c48d63854f77746c68a5fbb4aa17f3997ece1cb301689a257af8cb80610d21"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.11"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fc56589e9ddd1f1c28d4b4b5c773ce232910a6bb67a70133d61c9e347585efe9"
+checksum = "c258c1040279e4f88763a113de72ce32dde2d50e2a94573f15dd534cea36a16d"
 dependencies = [
  "proc-macro2",
  "quote",
