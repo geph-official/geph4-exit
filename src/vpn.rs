@@ -17,6 +17,7 @@ use pnet_packet::{
 use rand::prelude::*;
 use std::{
     collections::HashSet,
+    convert::Infallible,
     io::{Read, Write},
     net::{IpAddr, Ipv4Addr, SocketAddr},
     ops::Deref,
@@ -35,9 +36,9 @@ use crate::{
 };
 
 /// Runs the transparent proxy helper
-pub async fn transparent_proxy_helper() -> anyhow::Result<()> {
+pub async fn transparent_proxy_helper() -> anyhow::Result<Infallible> {
     if CONFIG.nat_external_iface().is_none() {
-        return Ok(());
+        return smol::future::pending().await;
     }
     // always run on port 10000
     // TODO this should bind dynamically

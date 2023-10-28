@@ -1,4 +1,5 @@
 use std::{
+    convert::Infallible,
     net::{IpAddr, SocketAddr},
     sync::atomic::Ordering,
     time::{Duration, Instant, SystemTime},
@@ -37,10 +38,10 @@ pub async fn main_loop() -> anyhow::Result<()> {
         .race(smolscale::spawn(pipe_listen()))
         .race(smolscale::spawn(set_ratelimit_loop()))
         .await?;
-    anyhow::bail!("somehow stopped")
+    Ok(())
 }
 
-async fn idlejitter() -> anyhow::Result<()> {
+async fn idlejitter() -> anyhow::Result<Infallible> {
     const INTERVAL: Duration = Duration::from_millis(10);
     loop {
         let start = Instant::now();
@@ -60,7 +61,7 @@ async fn idlejitter() -> anyhow::Result<()> {
     }
 }
 
-async fn killconn() -> anyhow::Result<()> {
+async fn killconn() -> anyhow::Result<Infallible> {
     loop {
         if ROOT_CTX.conn_count.load(Ordering::Relaxed) > CONFIG.conn_count_limit() {
             ROOT_CTX
@@ -71,7 +72,7 @@ async fn killconn() -> anyhow::Result<()> {
     }
 }
 
-async fn control_protocol() -> anyhow::Result<()> {
+async fn control_protocol() -> anyhow::Result<Infallible> {
     if CONFIG.official().is_some() {
         let secret = blake3::hash(dbg!(CONFIG
             .official()
@@ -88,14 +89,14 @@ async fn control_protocol() -> anyhow::Result<()> {
             geph4_protocol::bridge_exit::BridgeExitService(ControlService::new()),
         )
         .await?;
-        Ok(())
+        smol::future::pending().await
     } else {
         log::info!("NOT starting bridge exit listener");
         smol::future::pending().await
     }
 }
 
-async fn run_gauges() -> anyhow::Result<()> {
+async fn run_gauges() -> anyhow::Result<Infallible> {
     let key = format!("session_count.{}", ROOT_CTX.exit_hostname_dashed());
     let memkey = format!("bytes_allocated.{}", ROOT_CTX.exit_hostname_dashed());
     let connkey = format!("conn_count.{}", ROOT_CTX.exit_hostname_dashed());
@@ -135,7 +136,7 @@ async fn run_gauges() -> anyhow::Result<()> {
     }
 }
 
-async fn pipe_listen() -> anyhow::Result<()> {
+async fn pipe_listen() -> anyhow::Result<Infallible> {
     let exit_hostname = CONFIG
         .official()
         .as_ref()
@@ -242,7 +243,7 @@ async fn pipe_listen() -> anyhow::Result<()> {
     }
 }
 
-async fn set_ratelimit_loop() -> anyhow::Result<()> {
+async fn set_ratelimit_loop() -> anyhow::Result<Infallible> {
     let iface_name = CONFIG
         .nat_external_iface()
         .clone()
