@@ -36,7 +36,8 @@ pub async fn main_loop() -> anyhow::Result<()> {
         .race(smolscale::spawn(run_gauges()))
         .race(smolscale::spawn(pipe_listen()))
         .race(smolscale::spawn(set_ratelimit_loop()))
-        .await
+        .await?;
+    anyhow::bail!("somehow stopped")
 }
 
 async fn idlejitter() -> anyhow::Result<()> {
