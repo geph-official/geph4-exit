@@ -258,18 +258,6 @@ impl PartialEq for AssignedIpv4Addr {
 
 impl Eq for AssignedIpv4Addr {}
 
-impl PartialOrd for AssignedIpv4Addr {
-    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.inner.addr.partial_cmp(&other.inner.addr)
-    }
-}
-
-impl Ord for AssignedIpv4Addr {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.inner.addr.cmp(&other.inner.addr)
-    }
-}
-
 impl Deref for AssignedIpv4Addr {
     type Target = Ipv4Addr;
 

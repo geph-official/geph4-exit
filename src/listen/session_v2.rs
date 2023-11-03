@@ -25,7 +25,6 @@ use sosistab2::MuxStream;
 use stdcode::StdcodeSerializeExt;
 
 use std::{
-    mem::size_of_val,
     net::Ipv4Addr,
     sync::{
         atomic::{AtomicBool, AtomicU64, Ordering},
@@ -90,7 +89,7 @@ async fn handle_session_v2(mux: Arc<sosistab2::Multiplex>) -> anyhow::Result<()>
             ROOT_CTX.session_keepalive(id);
             let to_spawn = handle_conn(client_exit.clone(), conn, rand::thread_rng().gen())
                 .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
-            log::trace!("spawning future of {} bytes", size_of_val(&to_spawn));
+
             exec.spawn(to_spawn).detach();
         }
     })
@@ -112,7 +111,10 @@ async fn handle_conn(
             let client_exit = client_exit.clone();
 
             smolscale::spawn::<anyhow::Result<()>>(async move {
-                vpn_stream.recv_urel().await?;
+                vpn_stream
+                    .recv_urel()
+                    .await
+                    .context("could not receive from VPN")?;
                 if start_vpn {
                     let limiter = client_exit
                         .0
@@ -174,7 +176,9 @@ async fn handle_conn(
         let mut lines = up_read.lines();
 
         while let Some(line) = lines.next().await {
-            let line: JrpcRequest = serde_json::from_str(&line?)?;
+            let line: JrpcRequest =
+                serde_json::from_str(&line.context("could not read a line from @client-exit")?)
+                    .context("could not deserialize JSON from @client-exit")?;
             let resp = client_exit.respond_raw(line).await;
             stream.write_all(&serde_json::to_vec(&resp)?).await?;
             stream.write_all(b"\n").await?;
@@ -200,7 +204,8 @@ async fn handle_conn(
         true,
     )
     .boxed()
-    .await?;
+    .await
+    .context("failed in proxy_loop")?;
     Ok(())
 }
 

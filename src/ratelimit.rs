@@ -29,7 +29,7 @@ impl RateLimiter {
         let inner = governor::RateLimiter::new(
             Quota::per_second(limit).allow_burst(burst_size),
             governor::state::InMemoryState::default(),
-            &governor::clock::MonotonicClock::default(),
+            &governor::clock::MonotonicClock,
         );
         inner.check_n(burst_size).expect("this should never happen");
         Self {
@@ -43,7 +43,7 @@ impl RateLimiter {
         let inner = Arc::new(governor::RateLimiter::new(
             Quota::per_second(NonZeroU32::new(128 * 1024).unwrap()),
             governor::state::InMemoryState::default(),
-            &governor::clock::MonotonicClock::default(),
+            &governor::clock::MonotonicClock,
         ));
         Self {
             inner,
