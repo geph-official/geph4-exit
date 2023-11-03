@@ -78,9 +78,9 @@ sysinfo = "0.26.9"
 stdcode = "0.1.14"
 # sosistab2 = "0.9.7"
 
-sosistab2={git="https://github.com/geph-official/sosistab2", branch="refactor"}
-sosistab2-obfsudp={git="https://github.com/geph-official/sosistab2-obfsudp"}
-sosistab2-obfstls={git="https://github.com/geph-official/sosistab2-obfstls"}
+sosistab2="0.10"
+sosistab2-obfsudp="0.1"
+sosistab2-obfstls="0.1"
 
 nanorpc = "0.1.12" 
 closure = "0.3.0"
