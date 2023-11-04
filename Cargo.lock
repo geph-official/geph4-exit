@@ -4569,9 +4569,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2-obfsudp"
-version = "0.1.1"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "778f6f6c545d0d2493eb77aa3978c7fb4a83f007cab00dbb8285f8214d870742"
+checksum = "4911641b90c794b6b502d96fac917b99193f2448860a267da6f55705acd7aa31"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4591,6 +4591,7 @@ dependencies = [
  "probability",
  "rand 0.7.3",
  "reed-solomon-erasure",
+ "replay_filter",
  "ring 0.17.5",
  "scopeguard",
  "serde",
@@ -5628,9 +5629,9 @@ checksum = "ed94fce61571a4006852b7389a063ab983c02eb1bb37b47f8272ce92d06d9538"
 
 [[package]]
 name = "winnow"
-version = "0.5.18"
+version = "0.5.19"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "176b6138793677221d420fd2f0aeeced263f197688b36484660da767bca2fa32"
+checksum = "829846f3e3db426d4cee4510841b71a8e58aa2a76b1132579487ae430ccd9c7b"
 dependencies = [
  "memchr",
 ]
