@@ -3875,16 +3875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "replay_filter"
-version = "0.1.2"
-source = "git+https://github.com/geph-official/sosistab2#fe2bfd50de813a36888069920c56cb8a6ee61d9a"
-dependencies = [
- "bitvec 1.0.1",
- "honggfuzz",
- "log",
-]
-
-[[package]]
 name = "reqwest"
 version = "0.11.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4552,7 +4542,8 @@ dependencies = [
 [[package]]
 name = "sosistab2"
 version = "0.10.1"
-source = "git+https://github.com/geph-official/sosistab2#fe2bfd50de813a36888069920c56cb8a6ee61d9a"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "25223e258a777b70ce70c50e6e17f553e5606ea3e8b51aa93af812f53a30ad01"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4581,7 +4572,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_chacha 0.2.2",
  "recycle-box",
- "replay_filter 0.1.2 (git+https://github.com/geph-official/sosistab2)",
+ "replay_filter",
  "ring 0.16.20",
  "scopeguard",
  "serde",
@@ -4645,7 +4636,7 @@ dependencies = [
  "probability",
  "rand 0.7.3",
  "reed-solomon-erasure",
- "replay_filter 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replay_filter",
  "ring 0.17.5",
  "scopeguard",
  "serde",
