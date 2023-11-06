@@ -1787,7 +1787,7 @@ dependencies = [
  "smol_str",
  "smolscale 0.4.0",
  "socket2 0.4.10",
- "sosistab2 0.10.0 (git+https://github.com/geph-official/sosistab2)",
+ "sosistab2",
  "sosistab2-obfstls",
  "sosistab2-obfsudp",
  "statsd",
@@ -4507,54 +4507,6 @@ dependencies = [
 [[package]]
 name = "sosistab2"
 version = "0.10.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9622767f829ce8dc9ea37d3148c832d5d68c2ad434e28924e9f3a8d9caeeba5b"
-dependencies = [
- "ahash 0.8.6",
- "anyhow",
- "arrayref",
- "async-event",
- "async-trait",
- "blake3",
- "bytes",
- "cached 0.26.2",
- "concurrent-queue 1.2.4",
- "dashmap 5.5.3",
- "derivative",
- "diatomic-waker",
- "event-listener 2.5.3",
- "fastrand 1.9.0",
- "futures-intrusive 0.5.0",
- "futures-util",
- "hex",
- "indexmap 1.9.3",
- "itertools 0.10.5",
- "log",
- "num_cpus",
- "once_cell",
- "parking_lot 0.12.1",
- "pin-project",
- "rand 0.7.3",
- "rand_chacha 0.2.2",
- "recycle-box",
- "replay_filter 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "ring 0.16.20",
- "scopeguard",
- "serde",
- "slab",
- "smallvec",
- "smol",
- "smol-timeout",
- "smolscale 0.4.0",
- "stdcode",
- "subtle",
- "thiserror",
- "x25519-dalek",
-]
-
-[[package]]
-name = "sosistab2"
-version = "0.10.0"
 source = "git+https://github.com/geph-official/sosistab2#ff473e33981fed0e86cb73d01f4299aa5f7a9c94"
 dependencies = [
  "ahash 0.8.6",
@@ -4619,7 +4571,7 @@ dependencies = [
  "smol",
  "smol-timeout",
  "smolscale 0.4.0",
- "sosistab2 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sosistab2",
  "stdcode",
  "subtle",
 ]
@@ -4655,7 +4607,7 @@ dependencies = [
  "smol",
  "smol-timeout",
  "smolscale 0.4.0",
- "sosistab2 0.10.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sosistab2",
  "stdcode",
  "x25519-dalek",
 ]

@@ -7,6 +7,10 @@ description="Exit node for Geph"
 license="GPL-3.0-only"
 repository="https://github.com/geph-official/geph4-exit"
 
+[patch.crates-io]
+sosistab2={git="https://github.com/geph-official/sosistab2"}
+
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -78,7 +82,7 @@ sysinfo = "0.26.9"
 stdcode = "0.1.14"
 # sosistab2 = "0.9.7"
 
-sosistab2={git="https://github.com/geph-official/sosistab2"}
+sosistab2="0.10"
 sosistab2-obfsudp="0.1"
 sosistab2-obfstls="0.1"
 
