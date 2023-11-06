@@ -78,7 +78,7 @@ sysinfo = "0.26.9"
 stdcode = "0.1.14"
 # sosistab2 = "0.9.7"
 
-sosistab2="0.10"
+sosistab2={git="https://github.com/geph-official/sosistab2"}
 sosistab2-obfsudp="0.1"
 sosistab2-obfstls="0.1"
 
