@@ -4528,9 +4528,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.10.3"
+version = "0.10.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2ea03e595f4da260317e39538ebc89e3e9ddf880f233e531e53787e26cd883f3"
+checksum = "728cd445ffcf01a5d667890ca9cc2de2fd9450fff0ec726ab6787d3a90da1ed4"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
