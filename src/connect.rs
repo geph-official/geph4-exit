@@ -83,11 +83,9 @@ pub async fn proxy_loop(
         }
 
         // Obtain ASN
-        let asn = crate::asn::get_asn(addr.ip());
-        log::trace!(
-            "got connection request to {} of AS{} (conn_count = {})",
+        log::debug!(
+            "got connection request to {}  (conn_count = {})",
             CONFIG.redact(addr),
-            CONFIG.redact(asn),
             ROOT_CTX
                 .conn_count
                 .load(std::sync::atomic::Ordering::Relaxed)
