@@ -3877,7 +3877,7 @@ dependencies = [
 [[package]]
 name = "replay_filter"
 version = "0.1.2"
-source = "git+https://github.com/geph-official/sosistab2#de604d08335b3072a18112f1a22663f1732747a0"
+source = "git+https://github.com/geph-official/sosistab2#88c732c421ead53a53789dce36bb19653f2d5182"
 dependencies = [
  "bitvec 1.0.1",
  "honggfuzz",
@@ -4552,7 +4552,7 @@ dependencies = [
 [[package]]
 name = "sosistab2"
 version = "0.10.7"
-source = "git+https://github.com/geph-official/sosistab2#de604d08335b3072a18112f1a22663f1732747a0"
+source = "git+https://github.com/geph-official/sosistab2#88c732c421ead53a53789dce36bb19653f2d5182"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
