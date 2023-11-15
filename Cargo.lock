@@ -4614,9 +4614,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2-obfsudp"
-version = "0.1.10"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd67c22aa8496a0945ce70117ae0329fca2a30bec287e2dcb57b17575c152473"
+checksum = "e5d61f019a7c6fe0e6eb5e0449fc9fea6e3eabc98579f56642b046bb5a449999"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
