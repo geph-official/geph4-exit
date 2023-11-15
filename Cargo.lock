@@ -876,6 +876,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "clone-macro"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11b52aa11e0a83701c2f8a2b683c254889d8a957e7f58a5a06c5f98ebb4fc3c1"
+
+[[package]]
 name = "closure"
 version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1388,9 +1394,9 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
 name = "errno"
-version = "0.3.6"
+version = "0.3.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7c18ee0ed65a5f1f81cac6b1d213b69c35fa47d4252ad41f1486dbd8226fe36e"
+checksum = "f258a7194e7f7c2a7837a8913aeab7fd8c383457034fa20ce4dd3dcb813e8eb8"
 dependencies = [
  "libc",
  "windows-sys",
@@ -2007,9 +2013,9 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.21"
+version = "0.3.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "91fc23aa11be92976ef4729127f1a74adf36d8436f7816b185d18df956790833"
+checksum = "4d6250322ef6e60f93f9a2162799302cd6f68f79f6e5d85c8c16f14d1d958178"
 dependencies = [
  "bytes",
  "fnv",
@@ -2017,7 +2023,7 @@ dependencies = [
  "futures-sink",
  "futures-util",
  "http",
- "indexmap 1.9.3",
+ "indexmap 2.1.0",
  "slab",
  "tokio",
  "tokio-util",
@@ -4541,9 +4547,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.10.12"
+version = "0.10.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20c012b5c28f3f456734bc22f4b60b606c21463f376f2fab2e9b14c6bea8887f"
+checksum = "ea948b63e270f9b153d82dd99a4745712cccba89cfb6a4e1f9d59015ac6e5112"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4553,6 +4559,7 @@ dependencies = [
  "blake3",
  "bytes",
  "cached 0.26.2",
+ "clone-macro",
  "concurrent-queue 1.2.4",
  "dashmap 5.5.3",
  "derivative",
