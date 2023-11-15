@@ -272,7 +272,7 @@ dependencies = [
  "futures-lite 2.0.1",
  "parking",
  "polling 3.3.0",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "slab",
  "tracing",
  "waker-fn",
@@ -344,7 +344,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "event-listener 3.1.0",
  "futures-lite 1.13.0",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
@@ -381,7 +381,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "futures-core",
  "futures-io",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "signal-hook-registry",
  "slab",
  "windows-sys",
@@ -762,9 +762,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.84"
+version = "1.0.83"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f8e7c90afad890484a21653d08b6e209ae34770fb5ee298f9c699fcc1e5c856"
+checksum = "f1174fb0b6ec23863f8b971027804a42614e347eafb0a95bf0b12cdae21fc4d0"
 dependencies = [
  "libc",
 ]
@@ -1775,7 +1775,7 @@ dependencies = [
 
 [[package]]
 name = "geph4-exit"
-version = "0.11.1"
+version = "0.11.3"
 dependencies = [
  "anyhow",
  "arrayref",
@@ -2354,7 +2354,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
 dependencies = [
  "hermit-abi 0.3.3",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
@@ -3387,7 +3387,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "concurrent-queue 2.3.0",
  "pin-project-lite 0.2.13",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "tracing",
  "windows-sys",
 ]
@@ -3875,16 +3875,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "replay_filter"
-version = "0.1.2"
-source = "git+https://github.com/geph-official/sosistab2#88c732c421ead53a53789dce36bb19653f2d5182"
-dependencies = [
- "bitvec 1.0.1",
- "honggfuzz",
- "log",
-]
-
-[[package]]
 name = "reqwest"
 version = "0.11.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4041,9 +4031,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.21"
+version = "0.38.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2b426b0506e5d50a7d8dafcf2e81471400deb602392c7dd110815afb4eaf02a3"
+checksum = "9ad981d6c340a49cdc40a1028d9c6084ec7e9fa33fcb839cab656a267071e234"
 dependencies = [
  "bitflags 2.4.1",
  "errno",
@@ -4551,8 +4541,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.10.7"
-source = "git+https://github.com/geph-official/sosistab2#88c732c421ead53a53789dce36bb19653f2d5182"
+version = "0.10.12"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20c012b5c28f3f456734bc22f4b60b606c21463f376f2fab2e9b14c6bea8887f"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4581,7 +4572,7 @@ dependencies = [
  "rand 0.7.3",
  "rand_chacha 0.2.2",
  "recycle-box",
- "replay_filter 0.1.2 (git+https://github.com/geph-official/sosistab2)",
+ "replay_filter",
  "ring 0.16.20",
  "scopeguard",
  "serde",
@@ -4623,9 +4614,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2-obfsudp"
-version = "0.1.7"
+version = "0.1.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1de29b3ba3939d554d92c6b3b83141499a27fa184ae4237a54f5a270d496b7b0"
+checksum = "e5d61f019a7c6fe0e6eb5e0449fc9fea6e3eabc98579f56642b046bb5a449999"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4645,7 +4636,7 @@ dependencies = [
  "probability",
  "rand 0.7.3",
  "reed-solomon-erasure",
- "replay_filter 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "replay_filter",
  "ring 0.17.5",
  "scopeguard",
  "serde",
@@ -4959,15 +4950,15 @@ dependencies = [
  "cfg-if 1.0.0",
  "fastrand 2.0.1",
  "redox_syscall 0.4.1",
- "rustix 0.38.21",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
 [[package]]
 name = "termcolor"
-version = "1.3.0"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6093bad37da69aab9d123a8091e4be0aa4a03e4d601ec641c327398315f62b64"
+checksum = "ff1bc3d3f05aff0403e8ac0d92ced918ec05b666a43f83297ccef5bea8a3d449"
 dependencies = [
  "winapi-util",
 ]
@@ -5738,18 +5729,18 @@ dependencies = [
 
 [[package]]
 name = "zerocopy"
-version = "0.7.25"
+version = "0.7.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8cd369a67c0edfef15010f980c3cbe45d7f651deac2cd67ce097cd801de16557"
+checksum = "e97e415490559a91254a2979b4829267a57d2fcd741a98eee8b722fb57289aa0"
 dependencies = [
  "zerocopy-derive",
 ]
 
 [[package]]
 name = "zerocopy-derive"
-version = "0.7.25"
+version = "0.7.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2f140bda219a26ccc0cdb03dba58af72590c53b22642577d88a927bc5c87d6b"
+checksum = "dd7e48ccf166952882ca8bd778a43502c64f33bf94c12ebe2a7f08e5a0f6689f"
 dependencies = [
  "proc-macro2",
  "quote",
