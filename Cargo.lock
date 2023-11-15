@@ -272,7 +272,7 @@ dependencies = [
  "futures-lite 2.0.1",
  "parking",
  "polling 3.3.0",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "slab",
  "tracing",
  "waker-fn",
@@ -344,7 +344,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "event-listener 3.1.0",
  "futures-lite 1.13.0",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
@@ -381,7 +381,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "futures-core",
  "futures-io",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "signal-hook-registry",
  "slab",
  "windows-sys",
@@ -2354,7 +2354,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cb0889898416213fab133e1d33a0e5858a48177452750691bde3666d0fdbaf8b"
 dependencies = [
  "hermit-abi 0.3.3",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
@@ -3387,7 +3387,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "concurrent-queue 2.3.0",
  "pin-project-lite 0.2.13",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "tracing",
  "windows-sys",
 ]
@@ -4031,9 +4031,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.23"
+version = "0.38.24"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ffb93593068e9babdad10e4fce47dc9b3ac25315a72a59766ffd9e9a71996a04"
+checksum = "9ad981d6c340a49cdc40a1028d9c6084ec7e9fa33fcb839cab656a267071e234"
 dependencies = [
  "bitflags 2.4.1",
  "errno",
@@ -4541,9 +4541,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.10.10"
+version = "0.10.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4470d7ca4ba1cd47dc1258a474f1aa252e4b44e2761947ebfbb3eef4b1120267"
+checksum = "20c012b5c28f3f456734bc22f4b60b606c21463f376f2fab2e9b14c6bea8887f"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4614,9 +4614,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2-obfsudp"
-version = "0.1.7"
+version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1de29b3ba3939d554d92c6b3b83141499a27fa184ae4237a54f5a270d496b7b0"
+checksum = "cd67c22aa8496a0945ce70117ae0329fca2a30bec287e2dcb57b17575c152473"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -4950,7 +4950,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "fastrand 2.0.1",
  "redox_syscall 0.4.1",
- "rustix 0.38.23",
+ "rustix 0.38.24",
  "windows-sys",
 ]
 
