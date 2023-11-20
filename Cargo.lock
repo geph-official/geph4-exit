@@ -4551,9 +4551,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2"
-version = "0.10.14"
+version = "0.10.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "790dd7e500c632ea3fb14f47a06eab96523e7fb4fc11e5455d6768585c3291c1"
+checksum = "2001e974bc53f8390970987544656e0a33948b4f3851b8b12aa15c0b5d6a24ac"
 dependencies = [
  "ahash 0.8.6",
  "anyhow",
@@ -5387,9 +5387,9 @@ dependencies = [
 
 [[package]]
 name = "uuid"
-version = "1.5.0"
+version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88ad59a7560b41a70d191093a945f0b87bc1deeda46fb237479708a1d6b6cdfc"
+checksum = "5e395fcf16a7a3d8127ec99782007af141946b4795001f876d54fb0d55978560"
 dependencies = [
  "getrandom 0.2.11",
 ]
