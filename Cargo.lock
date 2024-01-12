@@ -4614,9 +4614,9 @@ dependencies = [
 
 [[package]]
 name = "sosistab2-obfstls"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d934684302a6b7a3fffb41c8c0e2f5c6e9423b21125766e7b3cd01252ed84e0f"
+checksum = "491610349879c885c396ca05ae3343be626854f18cc5a348d19e16b73da09d39"
 dependencies = [
  "anyhow",
  "arrayref",
