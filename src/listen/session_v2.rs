@@ -88,7 +88,8 @@ async fn handle_session_v2(mux: Arc<sosistab2::Multiplex>) -> anyhow::Result<()>
                 .context("timeout")??;
             ROOT_CTX.session_keepalive(id);
             let to_spawn = handle_conn(client_exit.clone(), conn, rand::thread_rng().gen())
-                .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e));
+                .unwrap_or_else(|e| log::debug!("connection handler died with {:?}", e))
+                .timeout(Duration::from_secs(600));
 
             exec.spawn(to_spawn).detach();
         }
@@ -172,7 +173,7 @@ async fn handle_conn(
             })
         };
         // run the loop
-        let up_read = BufReader::new(stream.clone()).take(1_000_000);
+        let up_read = BufReader::with_capacity(1024, stream.clone()).take(1_000_000);
         let mut lines = up_read.lines();
 
         while let Some(line) = lines.next().await {
@@ -197,14 +198,13 @@ async fn handle_conn(
         .0
         .limiter()
         .unwrap_or_else(RateLimiter::unlimited);
-    proxy_loop(
+    smolscale::spawn(proxy_loop(
         limiter.into(),
         stream.clone(),
         sess_random,
         hostname.into(),
         true,
-    )
-    .boxed()
+    ))
     .await
     .context("failed in proxy_loop")?;
     Ok(())
