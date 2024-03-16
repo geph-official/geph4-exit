@@ -278,7 +278,7 @@ async fn set_ratelimit_loop() -> anyhow::Result<Infallible> {
 
         last_bw_used = bw_used;
         let bw_usage = (bw_delta as f64 / 1000.0 / all_limit / seconds) as f32;
-        let total_usage = bw_usage.max(cpu_usage);
+        let total_usage = bw_usage.max(cpu_usage * 1.1);
         let multiplier = if total_usage < target_usage * 0.8 {
             i = 0.0;
             BW_MULTIPLIER.swap(1.0, Ordering::Relaxed)
