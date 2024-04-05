@@ -103,13 +103,17 @@ pub fn dummy_tls_config() -> TlsAcceptor {
     params.serial_number = Some(rand::random::<u64>());
     params.key_usages = vec![rcgen::KeyUsagePurpose::DigitalSignature];
     params.extended_key_usages = vec![rcgen::ExtendedKeyUsagePurpose::ServerAuth];
-
     let cert = rcgen::Certificate::from_params(params).unwrap();
     let cert_pem = cert.serialize_pem().unwrap();
     let cert_key = cert.serialize_private_key_pem();
     let identity = native_tls::Identity::from_pkcs8(cert_pem.as_bytes(), cert_key.as_bytes())
         .expect("Cannot decode identity");
-    native_tls::TlsAcceptor::new(identity).unwrap()
+
+    let mut builder = native_tls::TlsAcceptor::builder(identity);
+    builder.min_protocol_version(Some(native_tls::Protocol::Tlsv10));
+    builder.max_protocol_version(Some(native_tls::Protocol::Tlsv12));
+
+    builder.build().unwrap()
 }
 async fn forward_and_upload(
     listener: impl PipeListener + Send + Sync + 'static,
