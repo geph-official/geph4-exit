@@ -1869,6 +1869,7 @@ dependencies = [
  "structopt",
  "sysinfo",
  "tap",
+ "time 0.3.34",
  "toml",
  "tun",
  "ureq",

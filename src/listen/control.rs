@@ -48,21 +48,69 @@ impl ControlService {
         }
     }
 }
-
 pub fn dummy_tls_config() -> TlsAcceptor {
-    let cert = rcgen::generate_simple_self_signed(
-        (0..10)
-            .map(|_| format!("{}.com", rand::random::<u16>()))
-            .collect::<Vec<_>>(),
-    )
-    .unwrap();
+    let subject_alt_names = (0..10)
+        .map(|_| format!("{}.com", rand::random::<u16>()))
+        .collect::<Vec<_>>();
+
+    let mut params = rcgen::CertificateParams::default();
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CommonName, "api.example.com");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::OrganizationName, "Example Inc.");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::OrganizationalUnitName, "API Services");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::LocalityName, "San Francisco");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::StateOrProvinceName, "California");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CountryName, "US");
+
+    // Customize the issuer (for self-signed certificates, issuer is the same as subject)
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CommonName, "Example Inc. Root CA");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::OrganizationName, "Example Inc.");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::OrganizationalUnitName, "Security");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::LocalityName, "San Francisco");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::StateOrProvinceName, "California");
+    params
+        .distinguished_name
+        .push(rcgen::DnType::CountryName, "US");
+    params.subject_alt_names = subject_alt_names
+        .iter()
+        .map(|san| rcgen::SanType::DnsName(san.to_string()))
+        .collect();
+
+    // Customize other fields as needed
+    params.not_before = time::OffsetDateTime::now_utc();
+    params.not_after = time::OffsetDateTime::now_utc() + time::Duration::days(365);
+    params.serial_number = Some(rand::random::<u64>());
+    params.key_usages = vec![rcgen::KeyUsagePurpose::DigitalSignature];
+    params.extended_key_usages = vec![rcgen::ExtendedKeyUsagePurpose::ServerAuth];
+
+    let cert = rcgen::Certificate::from_params(params).unwrap();
     let cert_pem = cert.serialize_pem().unwrap();
     let cert_key = cert.serialize_private_key_pem();
     let identity = native_tls::Identity::from_pkcs8(cert_pem.as_bytes(), cert_key.as_bytes())
-        .expect("wtf cannot decode id???");
+        .expect("Cannot decode identity");
     native_tls::TlsAcceptor::new(identity).unwrap()
 }
-
 async fn forward_and_upload(
     listener: impl PipeListener + Send + Sync + 'static,
     bd_template: BridgeDescriptor,
