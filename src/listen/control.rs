@@ -14,6 +14,7 @@ use moka::sync::Cache;
 use native_tls::TlsAcceptor;
 use rand::prelude::*;
 
+use rcgen::PKCS_RSA_SHA512;
 use smol_str::SmolStr;
 use sosistab2::PipeListener;
 use sosistab2_obfstls::ObfsTlsListener;
@@ -72,6 +73,7 @@ pub fn dummy_tls_config() -> TlsAcceptor {
     params
         .distinguished_name
         .push(rcgen::DnType::CountryName, "US");
+    params.alg = &PKCS_RSA_SHA512;
 
     // Customize the issuer (for self-signed certificates, issuer is the same as subject)
     params
