@@ -50,7 +50,7 @@ impl ControlService {
 }
 
 pub fn dummy_tls_config() -> TlsAcceptor {
-    let cert = rcgen::generate_simple_self_signed(vec!["helloworld.com".to_string()]).unwrap();
+    let cert = rcgen::generate_simple_self_signed(vec!["amdg.xyz".to_string()]).unwrap();
     let cert_pem = cert.serialize_pem().unwrap();
     let cert_key = cert.serialize_private_key_pem();
     let identity = native_tls::Identity::from_pkcs8(cert_pem.as_bytes(), cert_key.as_bytes())
