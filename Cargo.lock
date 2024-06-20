@@ -198,6 +198,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-event"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c1222afd3d2bce3995035054046a279ae7aa154d70d0766cea050073f3fd7ddf"
+dependencies = [
+ "loom",
+ "pin-project-lite 0.2.14",
+]
+
+[[package]]
 name = "async-executor"
 version = "1.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1830,7 +1840,7 @@ dependencies = [
  "smol",
  "smol-timeout",
  "smol_str",
- "smolscale 0.4.4",
+ "smolscale 0.4.5",
  "socket2 0.4.10",
  "sosistab2",
  "sosistab2-obfstls",
@@ -3898,7 +3908,7 @@ dependencies = [
 [[package]]
 name = "replay_filter"
 version = "0.1.2"
-source = "git+https://github.com/geph-official/sosistab2#baf6e28f3b6c557474da0fa581c8d8460041b8dd"
+source = "git+https://github.com/geph-official/sosistab2#0ca038b012752d69bade1c4803efec5cbc763296"
 dependencies = [
  "bitvec 1.0.1",
  "honggfuzz",
@@ -4524,27 +4534,25 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.4.4"
+version = "0.4.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adbdca91c61f5db17b8a075842e1f0e2714cdadd96483940209906e4f29a12bc"
+checksum = "cb9e4029b55ec583e0353013b2c62d4e8e4e71ebd2db5d0567e4d17332fe08cf"
 dependencies = [
  "anyhow",
  "async-channel 1.9.0",
  "async-compat",
+ "async-event 0.2.1",
  "async-executor",
  "async-global-executor",
  "async-io 1.13.0",
  "async-task",
  "backtrace 0.3.73",
  "cache-padded",
- "crossbeam-deque",
  "crossbeam-queue",
  "crossbeam-utils",
  "dashmap 5.5.3",
  "event-listener 2.5.3",
  "fastrand 1.9.0",
- "flume",
- "futures-intrusive 0.4.2",
  "futures-lite 1.13.0",
  "futures-util",
  "log",
@@ -4585,12 +4593,12 @@ dependencies = [
 [[package]]
 name = "sosistab2"
 version = "0.10.21"
-source = "git+https://github.com/geph-official/sosistab2#baf6e28f3b6c557474da0fa581c8d8460041b8dd"
+source = "git+https://github.com/geph-official/sosistab2#0ca038b012752d69bade1c4803efec5cbc763296"
 dependencies = [
  "ahash 0.8.11",
  "anyhow",
  "arrayref",
- "async-event",
+ "async-event 0.1.0",
  "async-trait",
  "blake3",
  "bytes",
@@ -4623,7 +4631,7 @@ dependencies = [
  "smallvec",
  "smol",
  "smol-timeout",
- "smolscale 0.4.4",
+ "smolscale 0.4.5",
  "stdcode",
  "subtle",
  "thiserror",
@@ -4649,7 +4657,7 @@ dependencies = [
  "serde",
  "smol",
  "smol-timeout",
- "smolscale 0.4.4",
+ "smolscale 0.4.5",
  "sosistab2",
  "stdcode",
  "subtle",
@@ -4685,7 +4693,7 @@ dependencies = [
  "serde",
  "smol",
  "smol-timeout",
- "smolscale 0.4.4",
+ "smolscale 0.4.5",
  "sosistab2",
  "stdcode",
  "x25519-dalek",
