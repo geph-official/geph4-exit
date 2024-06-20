@@ -1840,7 +1840,7 @@ dependencies = [
  "smol",
  "smol-timeout",
  "smol_str",
- "smolscale 0.4.5",
+ "smolscale 0.4.6",
  "socket2 0.4.10",
  "sosistab2",
  "sosistab2-obfstls",
@@ -4534,9 +4534,9 @@ dependencies = [
 
 [[package]]
 name = "smolscale"
-version = "0.4.5"
+version = "0.4.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cb9e4029b55ec583e0353013b2c62d4e8e4e71ebd2db5d0567e4d17332fe08cf"
+checksum = "343a43f6e5b9b21ca7739b0bda5bcaba1fbf83356bdba2d74ed766c058c4706a"
 dependencies = [
  "anyhow",
  "async-channel 1.9.0",
@@ -4631,7 +4631,7 @@ dependencies = [
  "smallvec",
  "smol",
  "smol-timeout",
- "smolscale 0.4.5",
+ "smolscale 0.4.6",
  "stdcode",
  "subtle",
  "thiserror",
@@ -4657,7 +4657,7 @@ dependencies = [
  "serde",
  "smol",
  "smol-timeout",
- "smolscale 0.4.5",
+ "smolscale 0.4.6",
  "sosistab2",
  "stdcode",
  "subtle",
@@ -4693,7 +4693,7 @@ dependencies = [
  "serde",
  "smol",
  "smol-timeout",
- "smolscale 0.4.5",
+ "smolscale 0.4.6",
  "sosistab2",
  "stdcode",
  "x25519-dalek",
