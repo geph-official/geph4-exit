@@ -103,6 +103,7 @@ async fn run_gauges() -> anyhow::Result<Infallible> {
     let threadkey = format!("thread_key.{}", ROOT_CTX.exit_hostname_dashed());
     let ctrlkey = format!("control_count.{}", ROOT_CTX.exit_hostname_dashed());
     let taskkey = format!("task_count.{}", ROOT_CTX.exit_hostname_dashed());
+    let conntrackkey = format!("conntrack_count.{}", ROOT_CTX.exit_hostname_dashed());
 
     let cpukey = format!("cpu_usage.{}", ROOT_CTX.exit_hostname_dashed());
     let loadkey = format!("load_factor.{}", ROOT_CTX.exit_hostname_dashed());
@@ -131,6 +132,15 @@ async fn run_gauges() -> anyhow::Result<Infallible> {
 
             stat_client.gauge(&cpukey, usage as f64);
             stat_client.gauge(&loadkey, BW_MULTIPLIER.load(Ordering::Relaxed));
+
+            // Read conntrack count from FS
+            if let Ok(conntrack_count) =
+                std::fs::read_to_string("/proc/sys/net/netfilter/nf_conntrack_count")
+            {
+                if let Ok(count) = conntrack_count.trim().parse::<f64>() {
+                    stat_client.gauge(&conntrackkey, count);
+                }
+            }
         }
         smol::Timer::after(Duration::from_secs(10)).await;
     }
