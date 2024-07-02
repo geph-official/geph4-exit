@@ -177,7 +177,6 @@ async fn handle_conn(
 
         while let Some(line) = lines.next().await {
             let line = line.context("could not read a line from @client-exit")?;
-            log::debug!("LINE received {:?}", line);
             let line: JrpcRequest = serde_json::from_str(&line)
                 .context("could not deserialize JSON from @client-exit")?;
             let resp = client_exit.respond_raw(line).await;
