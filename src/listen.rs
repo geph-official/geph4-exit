@@ -100,9 +100,9 @@ async fn run_gauges() -> anyhow::Result<Infallible> {
     let key = format!("session_count.{}", ROOT_CTX.exit_hostname_dashed());
     let memkey = format!("bytes_allocated.{}", ROOT_CTX.exit_hostname_dashed());
     let connkey = format!("conn_count.{}", ROOT_CTX.exit_hostname_dashed());
-    let threadkey = format!("thread_key.{}", ROOT_CTX.exit_hostname_dashed());
+
     let ctrlkey = format!("control_count.{}", ROOT_CTX.exit_hostname_dashed());
-    let taskkey = format!("task_count.{}", ROOT_CTX.exit_hostname_dashed());
+
     let conntrackkey = format!("conntrack_count.{}", ROOT_CTX.exit_hostname_dashed());
 
     let cpukey = format!("cpu_usage.{}", ROOT_CTX.exit_hostname_dashed());
@@ -125,10 +125,6 @@ async fn run_gauges() -> anyhow::Result<Infallible> {
             stat_client.gauge(&connkey, conn_count as f64);
             let control_count = ROOT_CTX.control_count.load(Ordering::Relaxed);
             stat_client.gauge(&ctrlkey, control_count as f64);
-            let task_count = smolscale::active_task_count();
-            let thread_count = smolscale::running_threads();
-            stat_client.gauge(&taskkey, task_count as f64);
-            stat_client.gauge(&threadkey, thread_count as f64);
 
             stat_client.gauge(&cpukey, usage as f64);
             stat_client.gauge(&loadkey, BW_MULTIPLIER.load(Ordering::Relaxed));
